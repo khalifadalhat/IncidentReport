@@ -47,11 +47,12 @@ const AgentChat: React.FC = () => {
       alert('Please select a customer to chat with.');
       return;
     }
-
+  
     const newMessage = { sender: 'agent', text: message, recipient: selectedCustomer };
     socket.emit('sendMessage', newMessage);
     setMessage('');
   };
+  
 
   return (
     <div>

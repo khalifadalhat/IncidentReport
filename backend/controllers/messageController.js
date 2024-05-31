@@ -2,11 +2,14 @@ const Message = require('../models/Message');
 
 
 exports.getMessages = async (req, res) => {
+  const { sender, text, recipient } = req.body;
+
   try {
-    const messages = await Message.find();
-    res.json(messages);
+    const message = new Message({ sender, text, recipient });
+    await message.save();
+    res.status(201).json(message);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error' });
+    res.status(400).json({ message: 'Error sending message' });
   }
 };
 
