@@ -7,6 +7,7 @@ export interface ICase {
   location: string;
   agent: string;
   assignedAgent: string;
+  createdAt: string;
 }
 
 export interface ICustomer {

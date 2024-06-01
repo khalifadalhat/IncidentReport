@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { ICase } from '../interface/Icase';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { ICase } from "../interface/Icase";
 
 const AgentCases: React.FC = () => {
-  const [cases, setCases] = useState<ICase[]>([]);
+  const [pendingCases, setPendingCases] = useState<ICase[]>([]);
+  const [closedCases, setClosedCases] = useState<ICase[]>([]);
 
   useEffect(() => {
     fetchCases();
@@ -11,37 +12,164 @@ const AgentCases: React.FC = () => {
 
   const fetchCases = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/cases');
-      setCases(response.data.cases);
+      const response = await axios.get("http://localhost:5000/cases");
+      const casesWithAgents = await Promise.all(
+        response.data.cases.map(async (singleCase: ICase) => {
+          if (singleCase.assignedAgent) {
+            const agentResponse = await axios.get(
+              `http://localhost:5000/agents/${singleCase.assignedAgent}`
+            );
+            return { ...singleCase, agent: agentResponse.data.agent.fullname };
+          } else {
+            return { ...singleCase, agent: "Not Assigned" };
+          }
+        })
+      );
+
+      const pending = casesWithAgents.filter(
+        (singleCase: ICase) => singleCase.status === "pending"
+      );
+      const closed = casesWithAgents.filter(
+        (singleCase: ICase) => singleCase.status === "closed"
+      );
+
+      setPendingCases(pending);
+      setClosedCases(closed);
     } catch (error) {
-      console.error('Error fetching cases:', error);
+      console.error("Error fetching cases:", error);
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const options: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
   return (
-    <div>
-      <h2 className="text-2xl mb-4">Pending Cases</h2>
-      <table className="min-w-full">
-        <thead>
+    <div className="bg-white">
+      <h2 className="text-4xl px-20 py-10 font-semi-bold mb-4 text-black">
+        Dashboard
+      </h2>
+      <hr className="h-px my-8 bg-black border-0 dark:bg-gray-700" />
+
+      <div className="grid px-3">
+        <div className="row-start-1 col-span-4">
+          <div className="grid grid-cols-2">
+            <div>
+              <h2 className="text-black font-semibold">in-Mail Messages</h2>
+              <p className="text-gray-500 text-sm">
+                Monitor all messages and conversations.
+              </p>
+            </div>
+
+            <div>
+              <button className="bg-yellow-500 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
+                Create New in-Mail
+              </button>
+              <a
+                href="#"
+                className="font-medium text-black hover:underline px-2"
+              >
+                View
+              </a>
+            </div>
+          </div>
+          <div className="bg-[#faeeb9] mt-5 p-2 w-full">
+            <h1 className="text-xl text-black">Khalifa Dalhat</h1>
+            <h2 className="text-2xl font-bold text-black">
+              Follow-up on the customer with bad network!
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+              Voluptatem nihil alias voluptatibus sint eos sed soluta facere!
+              Nesciunt, dolor! Voluptatibus nam nihil architecto iste deserunt
+              deleniti consectetur. Possimus, odit? Corporis?
+            </p>
+          </div>
+        </div>
+        <div className="row-start-1 col-span-1 mx-2 mb-7">
+          <h2 className="text-black font-semibold mb-2">Pending Customers</h2>
+          <table className="w-full table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <tr>
+                <th className="px-6 py-3">Customer Name</th>
+                <th className="px-6 py-3">Issue</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Agent</th>
+                <th className="px-6 py-3">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingCases.map((singleCase) => (
+                <tr
+                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+                  key={singleCase._id}
+                >
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {singleCase.customerName}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 break-words whitespace-normal dark:text-white">
+                    {singleCase.issue}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-rose-500">
+                    {singleCase.status}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {singleCase.agent}
+                  </td>
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                    {formatDate(singleCase.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <h2 className="text-black font-semibold">Closed Customers</h2>
+      <table className="w-full table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
-            <th className="py-2">Customer Name</th>
-            <th className="py-2">Issue</th>
-            <th className="py-2">Department</th>
-            <th className="py-2">Status</th>
-            <th className="py-2">Location</th>
-            <th className="py-2">Actions</th>
+            <th className="px-6 py-3">Customer Name</th>
+            <th className="px-6 py-3">Issue</th>
+            <th className="px-6 py-3">Agent</th>
+            <th className="px-6 py-3">Date</th>
+            <th className="px-6 py-3">Status</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {cases.map(singleCase => (
-            <tr key={singleCase._id}>
-              <td className="border px-4 py-2">{singleCase.customerName}</td>
-              <td className="border px-4 py-2">{singleCase.issue}</td>
-              <td className="border px-4 py-2">{singleCase.department}</td>
-              <td className="border px-4 py-2">{singleCase.status}</td>
-              <td className="border px-4 py-2">{singleCase.location}</td>
-              <td className="border px-4 py-2">
-                <button className="bg-blue-500 text-white p-2 rounded">View</button>
+          {closedCases.map((singleCase) => (
+            <tr
+              className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"
+              key={singleCase._id}
+            >
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {singleCase.customerName}
+              </td>
+              <td className="px-6 py-4 font-medium text-gray-900 break-words whitespace-normal dark:text-white">
+                {singleCase.issue}
+              </td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {singleCase.agent}
+              </td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                {formatDate(singleCase.createdAt)}
+              </td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap bg-green-300">
+                {singleCase.status}
+              </td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                <a
+                  href="#"
+                  className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                >
+                  View
+                </a>
               </td>
             </tr>
           ))}

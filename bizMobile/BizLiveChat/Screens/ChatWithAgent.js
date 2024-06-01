@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet } from 'react-native';
 import io from 'socket.io-client';
 
-const socket = io('http://192.168.0.168:5000', {
+const socket = io('http://172.20.10.3:5000', {
   withCredentials: true,
 });
 

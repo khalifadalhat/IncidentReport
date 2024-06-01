@@ -8,7 +8,7 @@ const ProblemType = ({ route, navigation }) => {
   const [problem, setProblem] = useState('');
 
   const handleSubmit = () => {
-    axios.post('http://192.168.0.168:5000/cases', {
+    axios.post('http://172.20.10.3:5000/cases', {
       customerName: fullname, 
       issue: problem, 
       department, 

@@ -45,27 +45,28 @@ const AdminSettings: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl mb-4">Settings</h2>
+    <div className='bg-white'>
+      <h2 className="text-4xl px-20 py-10 font-semi-bold mb-4 text-black">Settings</h2>
+      <hr className="h-px my-8 bg-black border-0 dark:bg-gray-700" />
       <div className="mb-4">
         <input
           type="text"
           placeholder="Full Name"
           value={newAgent.fullname}
           onChange={e => setNewAgent({ ...newAgent, fullname: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         />
         <input
           type="text"
           placeholder="Email"
           value={newAgent.email}
           onChange={e => setNewAgent({ ...newAgent, email: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         />
         <select
           value={newAgent.department}
           onChange={e => setNewAgent({ ...newAgent, department: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         >
           {departments.map(dept => (
             <option key={dept} value={dept}>{dept}</option>
@@ -74,7 +75,7 @@ const AdminSettings: React.FC = () => {
         <select
           value={newAgent.role}
           onChange={e => setNewAgent({ ...newAgent, role: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         >
           {roles.map(role => (
             <option key={role} value={role}>{role}</option>
@@ -84,25 +85,25 @@ const AdminSettings: React.FC = () => {
           {currentAgent ? 'Update Agent' : 'Add Agent'}
         </button>
       </div>
-      <table className="min-w-full">
-        <thead>
+      <table className="w-full table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
-            <th className="py-2">Full Name</th>
-            <th className="py-2">Email</th>
-            <th className="py-2">Department</th>
-            <th className="py-2">Role</th>
-            <th className="py-2">Actions</th>
+            <th className="px-6 py-3">Full Name</th>
+            <th className="px-6 py-3">Email</th>
+            <th className="px-6 py-3">Department</th>
+            <th className="px-6 py-3">Role</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
           {agents.map(agent => (
-            <tr key={agent._id}>
-              <td className="border px-4 py-2">{agent.fullname}</td>
-              <td className="border px-4 py-2">{agent.email}</td>
-              <td className="border px-4 py-2">{agent.department}</td>
-              <td className="border px-4 py-2">{agent.role}</td>
-              <td className="border px-4 py-2">
-                <button onClick={() => handleEditAgent(agent)} className="bg-yellow-500 text-white p-2 rounded">Edit</button>
+            <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700" key={agent._id}>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-xs overflow-hidden overflow-ellipsis">{agent.fullname}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-xs overflow-hidden overflow-ellipsis">{agent.email}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-xs overflow-hidden overflow-ellipsis">{agent.department}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-xs overflow-hidden overflow-ellipsis">{agent.role}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white max-w-xs overflow-hidden overflow-ellipsis">
+                <button onClick={() => handleEditAgent(agent)} className="bg-yellow-500 text-white mx-2 p-2 rounded">Edit</button>
                 <button onClick={() => handleDeleteAgent(agent._id)} className="bg-red-500 text-white p-2 rounded">Delete</button>
               </td>
             </tr>

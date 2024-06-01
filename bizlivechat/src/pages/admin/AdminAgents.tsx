@@ -51,8 +51,8 @@ const AdminAgents: React.FC = () => {
   };
 
   return (
-    <div>
-      <h2 className="text-2xl mb-4">Manage Agents</h2>
+    <div className="bg-white">
+      <h2 className="text-4xl px-20 py-10 font-semi-bold mb-4 text-black">Manage Agents</h2>
       <div className="mb-4">
         <input
           type="text"
@@ -61,21 +61,21 @@ const AdminAgents: React.FC = () => {
           onChange={(e) =>
             setNewAgent({ ...newAgent, fullname: e.target.value })
           }
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         />
         <input
           type="email"
           placeholder="Email"
           value={newAgent.email}
           onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         />
         <select
           value={newAgent.department}
           onChange={(e) =>
             setNewAgent({ ...newAgent, department: e.target.value })
           }
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         >
           <option value="Funding Wallet">Funding Wallet</option>
           <option value="Buying Airtime">Buying Airtime</option>
@@ -87,36 +87,37 @@ const AdminAgents: React.FC = () => {
         <select
           value={newAgent.role}
           onChange={(e) => setNewAgent({ ...newAgent, role: e.target.value })}
-          className="border p-2 mr-2 rounded"
+          className="border p-2 mr-2 rounded text-black"
         >
           <option value="agent">Agent</option>
           <option value="supervisor">Supervisor</option>
         </select>
         <button
           onClick={handleCreateAgent}
-          className="bg-blue-500 text-white p-2 rounded"
+          className="bg-blue-500 text-white p-2 rounded w-20"
         >
-          Add Agent
+          Add 
         </button>
       </div>
-      <table className="min-w-full">
-        <thead>
+      <hr className="h-px my-8 bg-black border-0 dark:bg-gray-700" />
+      <table className="w-full table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
           <tr>
-            <th className="py-2">Full Name</th>
-            <th className="py-2">Email</th>
-            <th className="py-2">Department</th>
-            <th className="py-2">Role</th>
-            <th className="py-2">Actions</th>
+            <th className="px-6 py-3">Full Name</th>
+            <th className="px-6 py-3">Email</th>
+            <th className="px-6 py-3">Department</th>
+            <th className="px-6 py-3">Role</th>
+            <th className="px-6 py-3">Actions</th>
           </tr>
         </thead>
         <tbody>
           {agents.map((agent) => (
-            <tr key={agent._id}>
-              <td className="border px-4 py-2">{agent.fullname}</td>
-              <td className="border px-4 py-2">{agent.email}</td>
-              <td className="border px-4 py-2">{agent.department}</td>
-              <td className="border px-4 py-2">{agent.role}</td>
-              <td className="border px-4 py-2">
+            <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700" key={agent._id}>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{agent.fullname}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{agent.email}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{agent.department}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{agent.role}</td>
+              <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                 <button
                   onClick={() => handleDeleteAgent(agent._id)}
                   className="bg-red-500 text-white p-2 rounded"

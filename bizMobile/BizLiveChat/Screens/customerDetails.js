@@ -11,7 +11,7 @@ const CustomerDetails = ({ navigation }) => {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post('http://192.168.0.168:5000/customers', {
+      const response = await axios.post('http://172.20.10.3:5000/customers', {
         fullname,
         email,
         phone,
