@@ -1,4 +1,5 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
@@ -28,12 +29,13 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use(cookieParser());
 
-app.use('/customers', customerRoutes);
-app.use('/cases', caseRoutes);
-app.use('/agents', agentRoutes);
-app.use('/users', userRoutes);
-app.use('/messages', messageRoutes);
+app.use('/api', customerRoutes);
+app.use('/api', caseRoutes);
+app.use('/api', agentRoutes);
+app.use('/api', userRoutes);
+app.use('/api', messageRoutes);
 
 io.on('connection', (socket) => {
   console.log('A user connected');

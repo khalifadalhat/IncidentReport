@@ -1,15 +1,14 @@
 const express = require('express');
-const { createCase, getCases, getCasesByStatus, assignCase, updateCaseStatus, getCasesByAgentId, rejectCase, acceptCase } = require('../controllers/caseController');
-
 const router = express.Router();
+const caseController = require('../controllers/caseController');
 
-router.post('/', createCase);
-router.get('/', getCases);
-router.get('/:status', getCasesByStatus);
-router.put('/:caseId/assign', assignCase);
-router.put('/:caseId/accept', acceptCase);
-router.put('/:caseId/accept', rejectCase);
-router.put('/:caseId/status', updateCaseStatus);
-router.get('/agent/:agentId', getCasesByAgentId);
+router.post('/cases', caseController.createCase);
+router.get('/cases', caseController.getCases);
+router.put('/cases/accept/:caseId', caseController.acceptCase);
+router.put('/cases/reject/:caseId', caseController.rejectCase);
+router.get('/cases/status/:status', caseController.getCasesByStatus);
+router.put('/cases/assign', caseController.assignCase);
+router.put('/cases/status/:caseId', caseController.updateCaseStatus);
+router.get('/cases/agent/:agentId', caseController.getCasesByAgentId);
 
 module.exports = router;

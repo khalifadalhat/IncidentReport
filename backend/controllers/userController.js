@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const authMiddleware = require('../middleware/authMiddleware');
 
 exports.createUser = async (req, res) => {
   try {
@@ -18,8 +19,11 @@ exports.createUser = async (req, res) => {
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, 'BIZZAPP');
+    newUser.token = token;
+    await newUser.save();
+
     res.cookie('token', token, { httpOnly: true }); 
-    res.status(201).json({ user: newUser }); 
+    res.status(201).json({ user: newUser, token }); 
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -40,6 +44,8 @@ exports.loginUser = async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user._id }, 'BIZZAPP');
+    user.token = token;
+    await user.save();
 
     res.status(200).json({ user, token });
   } catch (err) {
@@ -47,12 +53,14 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-
-exports.getUsers = async (req, res) => {
-  try {
-    const users = await User.find();
-    res.status(200).json({ users });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+exports.getUsers = [
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const users = await User.find();
+      res.status(200).json({ users });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   }
-};
+];
