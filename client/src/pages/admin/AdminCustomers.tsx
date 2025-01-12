@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { ICustomer } from '../interface/Icase';
+import api from '../../api';
 
 const AdminCustomers: React.FC = () => {
   const [customers, setCustomers] = useState<ICustomer[]>([])
   useEffect(() => {
-    axios.get('http://localhost:5000/customers').then(response => {
+    api.get('customers').then(response => {
       setCustomers(response.data.customers);
     });
   }, []);
