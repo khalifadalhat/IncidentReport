@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { ICase } from "../interface/Icase";
+import api from "../../api";
 
-const AgentCases: React.FC = () => {
+interface AgentCasesProps {
+  agentId: string;
+}
+
+const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
   const [pendingCases, setPendingCases] = useState<ICase[]>([]);
   const [closedCases, setClosedCases] = useState<ICase[]>([]);
 
@@ -12,12 +16,12 @@ const AgentCases: React.FC = () => {
 
   const fetchCases = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/cases");
+      const response = await api.get("/cases");
       const casesWithAgents = await Promise.all(
         response.data.cases.map(async (singleCase: ICase) => {
           if (singleCase.assignedAgent) {
-            const agentResponse = await axios.get(
-              `http://localhost:5000/agents/${singleCase.assignedAgent}`
+            const agentResponse = await api.get(
+              `/cases/agent/${agentId}`
             );
             return { ...singleCase, agent: agentResponse.data.agent.fullname };
           } else {
@@ -70,12 +74,14 @@ const AgentCases: React.FC = () => {
               <button className="bg-yellow-500 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
                 Create New in-Mail
               </button>
-              <a
-                href="#"
+              <button
                 className="font-medium text-black hover:underline px-2"
+                onClick={() => {
+                  // Add your click handler logic here
+                }}
               >
                 View
-              </a>
+              </button>
             </div>
           </div>
           <div className="bg-[#faeeb9] mt-5 p-2 w-full">
@@ -164,12 +170,11 @@ const AgentCases: React.FC = () => {
                 {singleCase.status}
               </td>
               <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                <a
-                  href="#"
+                <button
                   className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                 >
                   View
-                </a>
+                </button>
               </td>
             </tr>
           ))}
