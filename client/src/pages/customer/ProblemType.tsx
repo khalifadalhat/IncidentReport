@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
+import api from '../../api';
 
 const ProblemType: React.FC = () => {
   const location = useLocation();
@@ -10,7 +10,7 @@ const ProblemType: React.FC = () => {
   const [problem, setProblem] = useState('');
 
   const handleSubmit = () => {
-    axios.post('http://localhost:5000/cases', {
+    api.post('/cases', {
       customerName: fullname,
       issue: problem,
       department,
@@ -30,7 +30,7 @@ const ProblemType: React.FC = () => {
       <hr className="h-px my-4 bg-black border-0 dark:bg-gray-700" />
       <div className="px-6 py-2 mx-auto md:h-screen w-[50vw] lg:py-0">
       <form className="space-y-4 w-full md:space-y-6 text-gray-900" onSubmit={(e) => e.preventDefault()}>
-      <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Please tell us what the problem is</label>
+      <label htmlFor="problem" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Please tell us what the problem is</label>
       <textarea
         className='mb-4 block w-full rounded-md border border-gray-300 p-2.5 shadow-sm'
         rows={10}
