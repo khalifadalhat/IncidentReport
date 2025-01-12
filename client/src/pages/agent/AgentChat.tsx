@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import axios from 'axios';
 import { ICase } from '../interface/Icase';
+import api from '../../api';
 
-const socket = io('http://localhost:5000', {
+const socket = io(api.defaults.baseURL ?? '', {
   withCredentials: true,
   extraHeaders: {
     'my-custom-header': 'abcd'
@@ -19,8 +20,8 @@ const AgentChat: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/cases`);
-        setCases(response.data.cases);
+        const response = await axios.get(`${api}/cases`);
+        setCases(response.data);
       } catch (error) {
         console.error('Error fetching cases:', error);
       }
@@ -32,7 +33,7 @@ const AgentChat: React.FC = () => {
       setMessages(initialMessages);
     });
 
-    socket.on('receiveMessage', (message) => {
+    socket.on('receiveMessage', (message: { sender: string; text: string }) => {
       setMessages((prevMessages) => [...prevMessages, message]);
     });
 
