@@ -1,8 +1,6 @@
 const Customer = require('../models/customer');
-const authMiddleware = require('../middleware/authMiddleware');
 
 exports.createCustomer = [
-  authMiddleware,
   async (req, res) => {
     const { fullname, email, phone, location } = req.body;
 
@@ -24,7 +22,6 @@ exports.createCustomer = [
 ];
 
 exports.getCustomers = [
-  authMiddleware,
   async (req, res) => {
     try {
       const customers = await Customer.find();

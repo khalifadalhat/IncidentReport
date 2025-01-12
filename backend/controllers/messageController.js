@@ -1,8 +1,6 @@
 const Message = require('../models/Message');
-const authMiddleware = require('../middleware/authMiddleware');
 
 exports.getMessages = [
-  authMiddleware,
   async (req, res) => {
     const { sender, text, recipient } = req.body;
 
@@ -17,7 +15,6 @@ exports.getMessages = [
 ];
 
 exports.sendMessage = [
-  authMiddleware,
   async (req, res) => {
     const { sender, text } = req.body;
 

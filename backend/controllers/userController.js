@@ -1,7 +1,6 @@
 const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const authMiddleware = require('../middleware/authMiddleware');
 
 exports.createUser = async (req, res) => {
   try {
@@ -54,7 +53,6 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.getUsers = [
-  authMiddleware,
   async (req, res) => {
     try {
       const users = await User.find();
