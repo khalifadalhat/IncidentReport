@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 
 const CustomerDetails: React.FC = () => {
   const [fullname, setFullname] = useState('');
@@ -11,7 +11,7 @@ const CustomerDetails: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      const response = await axios.post('http://localhost:5000/customers', {
+      const response = await api.post('/customers', {
         fullname,
         email,
         phone,
