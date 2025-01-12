@@ -1,5 +1,4 @@
 import { Route, Routes } from "react-router-dom";
-import axios from "axios";
 import { PieChart, Pie, Cell, Legend } from "recharts";
 import { useEffect, useState } from "react";
 import AdminAgents from "./AdminAgents";
@@ -7,49 +6,86 @@ import AdminCustomers from "./AdminCustomers";
 import AdminCases from "./AdminCases";
 import AdminMessages from "./AdminMessages";
 import AdminSettings from "./AdminSettings";
+import api from "../../api";
 
 const AdminDashboard: React.FC = () => {
   const [pendingCases, setPendingCases] = useState<number>(0);
   const [closedCases, setClosedCases] = useState<number>(0);
   const [activeCases, setActiveCases] = useState<number>(0);
 
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/cases");
+        console.log("Fetching cases from /cases");
+        const response = await api.get("/cases");
+        console.log("Response data:", response.data);
         const cases = response.data.cases;
-        
+
         let pendingCount = 0;
         let closedCount = 0;
         let activeCount = 0;
-        
-        for (const singleCase of cases) {
-          if (singleCase.status === "pending") {
-            pendingCount++;
-          } else if (singleCase.status === "closed") {
-            closedCount++;
-          } else {
-            activeCount++;
-          }
-  
-          if (singleCase.assignedAgent) {
-            const agentResponse = await axios.get(`http://localhost:5000/agents/${singleCase.assignedAgent}`);
-            singleCase.agent = agentResponse.data.agent.fullname;
-          } else {
-            singleCase.agent = "Not Assigned";
-          }
-        }
-  
+
+        cases.forEach((c: { status: string }) => {
+          if (c.status === "pending") pendingCount++;
+          if (c.status === "closed") closedCount++;
+          if (c.status === "active") activeCount++;
+        });
+
         setPendingCases(pendingCount);
         setClosedCases(closedCount);
         setActiveCases(activeCount);
       } catch (error) {
         console.error("Error fetching cases:", error);
+        
       }
     };
-  
+
     fetchData();
   }, []);
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await api.get("/cases");
+  //       console.log(response.data);
+  //       const cases = response.data.cases;
+        
+  //       let pendingCount = 0;
+  //       let closedCount = 0;
+  //       let activeCount = 0;
+        
+  //       for (const singleCase of cases) {
+  //         if (singleCase.status === "pending") {
+  //           pendingCount++;
+  //         } else if (singleCase.status === "closed") {
+  //           closedCount++;
+  //         } else {
+  //           activeCount++;
+  //         }
+  
+  //         if (singleCase.assignedAgent) {
+  //           const agentResponse = await api.get(`/agents/${singleCase.assignedAgent}`);
+  //           singleCase.agent = agentResponse.data.agent.fullname;
+  //         } else {
+  //           singleCase.agent = "Not Assigned";
+  //         }
+  //       }
+  
+  //       setPendingCases(pendingCount);
+  //       setClosedCases(closedCount);
+  //       setActiveCases(activeCount);
+  //     } catch (error) {
+  //       if (error instanceof Error) {
+  //         console.error("Error fetching cases:", error.message);
+  //       } else {
+  //         console.error("Error fetching cases:", error);
+  //       }
+  //     }
+  //   };
+  
+  //   fetchData();
+  // }, []);
   
 
   const data = [
