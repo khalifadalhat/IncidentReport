@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { IAgent } from "../interface/Icase";
+import api from "../../api";
 
 const AdminAgents: React.FC = () => {
   const [agents, setAgents] = useState<IAgent[]>([]);
@@ -12,8 +12,8 @@ const AdminAgents: React.FC = () => {
   });
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/agents")
+    api
+      .get("/agents")
       .then((response) => {
         setAgents(response.data.agents);
       })
@@ -23,8 +23,8 @@ const AdminAgents: React.FC = () => {
   }, []);
 
   const handleCreateAgent = async () => {
-    await axios
-      .post("http://localhost:5000/agents", newAgent)
+    await api
+      .post("/agents", newAgent)
       .then((response) => {
         setAgents([...agents, response.data.agent]);
         setNewAgent({
@@ -40,8 +40,8 @@ const AdminAgents: React.FC = () => {
   };
 
   const handleDeleteAgent = async (id: string) => {
-    await axios
-      .delete(`http://localhost:5000/agents/${id}`)
+    api
+      .delete(`/agents/${id}`)
       .then(() => {
         setAgents(agents.filter((agent) => agent._id !== id));
       })
