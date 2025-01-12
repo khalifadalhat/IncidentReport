@@ -1,7 +1,8 @@
 import React from 'react';
 import io from 'socket.io-client';
+import api from '../../api';
 
-const socket = io('http://localhost:5000', {
+const socket = io(api.defaults.baseURL ?? '', {
   withCredentials: true,
 });
 
