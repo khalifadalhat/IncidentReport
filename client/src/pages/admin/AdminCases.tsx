@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { IAdmin, IAgent } from "../interface/Icase";
+import api from "../../api";
 
 const AdminCases: React.FC = () => {
   const [cases, setCases] = useState<IAdmin[]>([]);
@@ -14,7 +14,7 @@ const AdminCases: React.FC = () => {
 
   const fetchCases = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/cases");
+      const response = await api.get("/cases");
       setCases(response.data.cases);
     } catch (error) {
       console.error("Error fetching cases:", error);
@@ -23,7 +23,7 @@ const AdminCases: React.FC = () => {
 
   const fetchAgents = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/agents");
+      const response = await api.get("/agents");
       setAgents(response.data.agents);
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -31,14 +31,14 @@ const AdminCases: React.FC = () => {
   };
 
   const handleAssignAgent = async (caseId: string, agentId?: string) => {
-    const selectedAgentId = agentId || selectedAgent;
+    const selectedAgentId = agentId ?? selectedAgent;
     if (!selectedAgentId) {
       alert("Please select an agent.");
       return;
     }
 
     try {
-      await axios.put(`http://localhost:5000/cases/${caseId}/assign`, {
+      await api.put(`/cases/assign`, {
         caseId,
         agentId: selectedAgentId,
       });
@@ -60,7 +60,7 @@ const AdminCases: React.FC = () => {
 
   const handleChangeStatus = async (caseId: string, status: string) => {
     try {
-      await axios.put(`http://localhost:5000/cases/${caseId}/status`, {
+      await api.put(`/cases/status/:caseId`, {
         status,
       });
       setCases((prevCases) =>
@@ -132,7 +132,7 @@ const AdminCases: React.FC = () => {
                 <select
                   value={singleCase.agent || ""}
                   onChange={(e) =>
-                    handleAssignAgent(singleCase._id, e.target.value as string)
+                    handleAssignAgent(singleCase._id, e.target.value)
                   }
                 >
                   <option value="">Select Agent</option>
