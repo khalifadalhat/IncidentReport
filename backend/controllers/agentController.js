@@ -4,7 +4,8 @@ const nodemailer = require('nodemailer');
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'sandbox.smtp.mailtrap.io',
+  port: 2525,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -25,7 +26,7 @@ const generatePassword = () => {
 // Send email with credentials
 const sendCredentialsEmail = async (email, fullname, password, department, role) => {
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Customer Support" <process.env.EMAIL_USER>`,
     to: email,
     subject: 'Your Agent Account Credentials - Welcome to the Team!',
     html: `
