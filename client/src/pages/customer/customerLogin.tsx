@@ -60,7 +60,7 @@ const CustomerLogin: React.FC = () => {
 
       // Redirect to customer dashboard
       setTimeout(() => {
-        window.location.href = '/customer-dashboard';
+        window.location.href = '/customer';
       }, 1500);
     } catch (error: any) {
       console.error('Login error:', error);
@@ -109,7 +109,7 @@ const CustomerLogin: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter your email"
                   disabled={loading}
                 />
@@ -129,7 +129,7 @@ const CustomerLogin: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter your password"
                   disabled={loading}
                 />
