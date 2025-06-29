@@ -1,8 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const customerController = require('../controllers/customerController');
+const {
+  registerCustomer,
+  loginCustomer,
+  getCustomers,
+  getCustomerProfile,
+  updateCustomerProfile,
+  authMiddleware,
+} = require('../controllers/customerController');
 
-router.post('/customers', customerController.createCustomer);
-router.get('/customers', customerController.getCustomers);
+// Public routes
+router.post('/register', registerCustomer);
+router.post('/login', loginCustomer);
+
+// Protected routes
+router.get('/profile', authMiddleware, getCustomerProfile);
+router.put('/profile', authMiddleware, updateCustomerProfile);
+
+// Admin only routes
+router.get('/', getCustomers);
 
 module.exports = router;

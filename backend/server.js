@@ -19,53 +19,54 @@ const io = new Server(server, {
     origin: 'http://localhost:5173',
     methods: ['GET', 'POST'],
     credentials: true,
-  }
+  },
 });
 
 connectDB();
 
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
-app.use('/api', customerRoutes);
+// Routes
+app.use('/api/agents', require('./routes/agentRoutes'));
+app.use('/api/customers', require('./routes/customerRoutes'));
+app.use('/api/customers', customerRoutes);
 app.use('/api', caseRoutes);
-app.use('/api', agentRoutes);
+app.use('/api/agents', agentRoutes);
 app.use('/api', userRoutes);
 app.use('/api', messageRoutes);
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   console.log('A user connected');
 
-  
   Message.find()
-    .then((messages) => {
+    .then(messages => {
       socket.emit('initialMessages', messages);
     })
-    .catch((error) => {
+    .catch(error => {
       console.error('Error fetching initial messages:', error);
     });
 
-  
-  socket.on('sendMessage', async (msg) => {
+  socket.on('sendMessage', async msg => {
     try {
       const message = new Message(msg);
       await message.save();
-      io.emit('receiveMessage', message); 
+      io.emit('receiveMessage', message);
     } catch (error) {
       console.error('Error sending message:', error);
     }
   });
 
- 
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
 });
-
 
 const PORT = process.env.PORT || 5000;
 

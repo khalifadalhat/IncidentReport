@@ -20,26 +20,26 @@ export interface ICustomer {
 }
 
 export interface IAdmin {
-    _id: string;
-    customerName: string;
-    issue: string;
-    department: string;
-    status: string;
-    location: string;
-    agent: string;
-  }
+  _id: string;
+  customerName: string;
+  issue: string;
+  department: string;
+  status: string;
+  location: string;
+  agent: string;
+}
 
-  export interface IAgent {
-    _id: string;
-    fullname: string;
-    email: string,
-    department: string;
-    role: string;
-  }
+export interface IAgent {
+  _id: string;
+  fullname: string;
+  email: string;
+  status: string;
+  department: string;
+  role: string;
+}
 
-  export interface DecodedToken {
-    userId: string;
-    role: string;
-    exp: number;
-  }
-  
+export interface DecodedToken {
+  userId: string;
+  role: string;
+  exp: number;
+}

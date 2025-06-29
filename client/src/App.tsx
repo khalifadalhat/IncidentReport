@@ -7,6 +7,8 @@ import Login from './pages/Login';
 import SignupForm from './pages/SignUp';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import DashboardDetails from './pages/DashboardDetails';
+import CustomerRegistration from './pages/customer/customerRegistration';
+import CustomerLogin from './pages/customer/customerLogin';
 
 const App: React.FC = () => {
   return (
@@ -14,6 +16,8 @@ const App: React.FC = () => {
       <Route path="/" element={<DashboardDetails />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignupForm />} />
+      <Route path="/signup/customer" element={<CustomerRegistration />} />
+      <Route path="/signin/customer" element={<CustomerLogin />} />
       <Route path="/customer/*" element={<CustomerDashboard />} />
       <Route path="/admin/*" element={<AdminDashboard />} />
       <Route path="/agent/*" element={<AgentDashboard />} />
