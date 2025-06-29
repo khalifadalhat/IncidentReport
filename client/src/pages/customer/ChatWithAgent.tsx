@@ -36,7 +36,7 @@ const ChatWithAgent: React.FC = () => {
     const fetchCaseDetails = async () => {
       try {
         // This would come from your navigation state or API
-        const response = await api.get('/cases/latest');
+        const response = await api.get('/cases');
         setCaseDetails(response.data);
       } catch (error) {
         console.error('Error fetching case details:', error);
