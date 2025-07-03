@@ -20,7 +20,7 @@ const LandingPage: React.FC = () => {
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Admin login attempted with:", adminCredentials);
-    window.location.href = "/admin/dashboard";
+    window.location.href = "/admin";
   };
 
   return (
