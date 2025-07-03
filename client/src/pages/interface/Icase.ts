@@ -17,6 +17,7 @@ export interface ICustomer {
   gender: string;
   phone: number;
   email: string;
+  status: string;
 }
 
 export interface IAdmin {
