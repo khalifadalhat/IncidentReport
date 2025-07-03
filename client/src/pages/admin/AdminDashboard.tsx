@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from "react-router-dom";
 import {
   PieChart,
   Pie,
@@ -10,8 +10,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import { useEffect, useState } from 'react';
+} from "recharts";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -22,8 +22,7 @@ import {
   TrendingUp,
   Activity,
   Clock,
-} from 'lucide-react';
-
+} from "lucide-react";
 
 const AdminAgents = () => <div className="p-6">Agents Page</div>;
 const AdminCustomers = () => <div className="p-6">Customers Page</div>;
@@ -41,12 +40,12 @@ const AdminDashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         // Simulating API call with mock data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         setPendingCases(12);
         setClosedCases(45);
         setActiveCases(23);
       } catch (error) {
-        console.error('Error fetching cases:', error);
+        console.error("Error fetching cases:", error);
       }
     };
 
@@ -54,18 +53,18 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const data = [
-    { name: 'Active', value: activeCases },
-    { name: 'Closed', value: closedCases },
-    { name: 'Pending', value: pendingCases },
+    { name: "Active", value: activeCases },
+    { name: "Closed", value: closedCases },
+    { name: "Pending", value: pendingCases },
   ];
 
   const menuItems = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Agents', href: '/admin/agents', icon: UserCheck },
-    { name: 'Customers', href: '/admin/customers', icon: Users },
-    { name: 'Cases', href: '/admin/cases', icon: Briefcase },
-    { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
-    { name: 'Settings', href: '/admin/settings', icon: Settings },
+    { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+    { name: "Agents", href: "/admin/agents", icon: UserCheck },
+    { name: "Customers", href: "/admin/customers", icon: Users },
+    { name: "Cases", href: "/admin/cases", icon: Briefcase },
+    { name: "Messages", href: "/admin/messages", icon: MessageSquare },
+    { name: "Settings", href: "/admin/settings", icon: Settings },
   ];
 
   return (
@@ -92,7 +91,8 @@ const AdminDashboard: React.FC = () => {
                 <li key={index + 1}>
                   <a
                     href={item.href}
-                    className="flex items-center px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-700/50 hover:text-white transition-all duration-200 group">
+                    className="flex items-center px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-700/50 hover:text-white transition-all duration-200 group"
+                  >
                     <IconComponent className="w-5 h-5 mr-3 text-blue-400 group-hover:text-blue-300 transition-colors" />
                     <span className="font-medium">{item.name}</span>
                   </a>
@@ -106,7 +106,7 @@ const AdminDashboard: React.FC = () => {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <Routes>
-          <Route path="/dashboard" element={<AdminDashboardContent data={data} />} />
+          <Route path="/" element={<AdminDashboardContent data={data} />} />
           <Route path="/agents" element={<AdminAgents />} />
           <Route path="/customers" element={<AdminCustomers />} />
           <Route path="/cases" element={<AdminCases />} />
@@ -121,18 +121,18 @@ const AdminDashboard: React.FC = () => {
 const AdminDashboardContent: React.FC<{
   data: { name: string; value: number }[];
 }> = ({ data }) => {
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B'];
+  const COLORS = ["#3B82F6", "#10B981", "#F59E0B"];
 
   const totalCases = data.reduce((sum, item) => sum + item.value, 0);
 
   // Area chart data showing trends over time
   const trendData = [
-    { month: 'Jan', Active: 15, Closed: 25, Pending: 8 },
-    { month: 'Feb', Active: 18, Closed: 32, Pending: 12 },
-    { month: 'Mar', Active: 22, Closed: 28, Pending: 15 },
-    { month: 'Apr', Active: 20, Closed: 35, Pending: 10 },
-    { month: 'May', Active: 25, Closed: 40, Pending: 14 },
-    { month: 'Jun', Active: 23, Closed: 45, Pending: 12 },
+    { month: "Jan", Active: 15, Closed: 25, Pending: 8 },
+    { month: "Feb", Active: 18, Closed: 32, Pending: 12 },
+    { month: "Mar", Active: 22, Closed: 28, Pending: 15 },
+    { month: "Apr", Active: 20, Closed: 35, Pending: 10 },
+    { month: "May", Active: 25, Closed: 40, Pending: 14 },
+    { month: "Jun", Active: 23, Closed: 45, Pending: 12 },
   ];
 
   const MetricCard = ({
@@ -171,7 +171,9 @@ const AdminDashboardContent: React.FC<{
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          Dashboard Overview
+        </h1>
         <p className="text-gray-600">
           Welcome back! Here's what's happening with your cases today.
         </p>
@@ -181,21 +183,21 @@ const AdminDashboardContent: React.FC<{
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <MetricCard
           title="Active Cases"
-          value={data.find(item => item.name === 'Active')?.value || 0}
+          value={data.find((item) => item.name === "Active")?.value || 0}
           icon={Activity}
           color="bg-blue-500"
           trend="+12% from last month"
         />
         <MetricCard
           title="Closed Cases"
-          value={data.find(item => item.name === 'Closed')?.value || 0}
+          value={data.find((item) => item.name === "Closed")?.value || 0}
           icon={TrendingUp}
           color="bg-green-500"
           trend="+8% from last month"
         />
         <MetricCard
           title="Pending Cases"
-          value={data.find(item => item.name === 'Pending')?.value || 0}
+          value={data.find((item) => item.name === "Pending")?.value || 0}
           icon={Clock}
           color="bg-yellow-500"
           trend="-5% from last month"
@@ -206,7 +208,9 @@ const AdminDashboardContent: React.FC<{
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Area Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Cases Trend Over Time</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-6">
+            Cases Trend Over Time
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={trendData}>
               <defs>
@@ -228,10 +232,10 @@ const AdminDashboardContent: React.FC<{
               <YAxis stroke="#6b7280" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                 }}
               />
               <Area
@@ -264,7 +268,9 @@ const AdminDashboardContent: React.FC<{
 
         {/* Modern Pie Chart */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Current Cases Distribution</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-6">
+            Current Cases Distribution
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -274,17 +280,21 @@ const AdminDashboardContent: React.FC<{
                 innerRadius={60}
                 outerRadius={120}
                 paddingAngle={5}
-                dataKey="value">
+                dataKey="value"
+              >
                 {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: "white",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
                 }}
               />
             </PieChart>
@@ -296,7 +306,8 @@ const AdminDashboardContent: React.FC<{
               <div key={entry.name} className="flex items-center">
                 <div
                   className="w-4 h-4 rounded-full mr-2"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                ></div>
                 <span className="text-sm text-gray-700 font-medium">
                   {entry.name}: {entry.value}
                 </span>
@@ -308,7 +319,9 @@ const AdminDashboardContent: React.FC<{
 
       {/* Summary Stats */}
       <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Summary Statistics</h3>
+        <h3 className="text-xl font-semibold text-gray-900 mb-4">
+          Summary Statistics
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="text-center">
             <p className="text-3xl font-bold text-blue-600">{totalCases}</p>
@@ -317,7 +330,9 @@ const AdminDashboardContent: React.FC<{
           <div className="text-center">
             <p className="text-3xl font-bold text-green-600">
               {Math.round(
-                ((data.find(item => item.name === 'Closed')?.value || 0) / totalCases) * 100
+                ((data.find((item) => item.name === "Closed")?.value || 0) /
+                  totalCases) *
+                  100
               )}
               %
             </p>
@@ -326,7 +341,9 @@ const AdminDashboardContent: React.FC<{
           <div className="text-center">
             <p className="text-3xl font-bold text-yellow-600">
               {Math.round(
-                ((data.find(item => item.name === 'Pending')?.value || 0) / totalCases) * 100
+                ((data.find((item) => item.name === "Pending")?.value || 0) /
+                  totalCases) *
+                  100
               )}
               %
             </p>
