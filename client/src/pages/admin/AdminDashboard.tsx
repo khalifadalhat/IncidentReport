@@ -23,12 +23,11 @@ import {
   Activity,
   Clock,
 } from "lucide-react";
-
-const AdminAgents = () => <div className="p-6">Agents Page</div>;
-const AdminCustomers = () => <div className="p-6">Customers Page</div>;
-const AdminCases = () => <div className="p-6">Cases Page</div>;
-const AdminMessages = () => <div className="p-6">Messages Page</div>;
-const AdminSettings = () => <div className="p-6">Settings Page</div>;
+import AdminAgents from "./AdminAgents";
+import AdminCustomers from "./AdminCustomers";
+import AdminCases from "./AdminCases";
+import AdminMessages from "./AdminMessages";
+import AdminSettings from "./AdminSettings";
 
 const AdminDashboard: React.FC = () => {
   const [pendingCases, setPendingCases] = useState<number>(12);
