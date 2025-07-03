@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../api';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const CustomerRegistration: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,8 @@ const CustomerRegistration: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const showMessage = (msg: string, type: 'success' | 'error') => {
     setMessage(msg);
@@ -47,12 +50,12 @@ const CustomerRegistration: React.FC = () => {
 
     const phoneRegex = /^\d{10,15}$/;
     if (!phoneRegex.test(phone.replace(/\s+/g, ''))) {
-      showMessage('Please enter a valid phone number', 'error');
+      showMessage('Please enter a valid phone number (10-15 digits)', 'error');
       return false;
     }
 
-    if (password.length < 6) {
-      showMessage('Password must be at least 6 characters long', 'error');
+    if (password.length < 8) {
+      showMessage('Password must be at least 8 characters long', 'error');
       return false;
     }
 
@@ -66,7 +69,6 @@ const CustomerRegistration: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setLoading(true);
@@ -74,13 +76,11 @@ const CustomerRegistration: React.FC = () => {
       const { confirmPassword, ...submitData } = formData;
       const response = await api.post('/customers/register', submitData);
 
-      // Store token in localStorage (or consider using a more secure method)
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('customer', JSON.stringify(response.data.customer));
 
-      showMessage('Registration successful! Welcome to our platform.', 'success');
+      showMessage('Registration successful! Redirecting...', 'success');
 
-      // Reset form
       setFormData({
         fullname: '',
         email: '',
@@ -91,14 +91,13 @@ const CustomerRegistration: React.FC = () => {
         confirmPassword: '',
       });
 
-      // Redirect to dashboard or login page after successful registration
       setTimeout(() => {
         window.location.href = '/customer-dashboard';
       }, 2000);
     } catch (error: any) {
       console.error('Registration error:', error);
       const errorMessage =
-        error.response?.data?.msg || error.response?.data?.error || 'Registration failed';
+        error.response?.data?.msg || error.response?.data?.error || 'Registration failed. Please try again.';
       showMessage(errorMessage, 'error');
     } finally {
       setLoading(false);
@@ -106,193 +105,232 @@ const CustomerRegistration: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create Your Account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Join our platform to access our services
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* Message Display */}
-          {message && (
-            <div
-              className={`mb-4 p-4 rounded-md ${
-                messageType === 'success'
-                  ? 'bg-green-50 border border-green-200 text-green-700'
-                  : 'bg-red-50 border border-red-200 text-red-700'
-              }`}>
-              {message}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="md:flex">
+          {/* Left Side - Branding/Image */}
+          <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-10 text-white">
+            <div className="h-full flex flex-col justify-center">
+              <h1 className="text-3xl font-bold mb-4">Join Our Community</h1>
+              <p className="text-blue-100 mb-8">
+                Create your account to access exclusive features and services tailored just for you.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <div className="bg-blue-500 rounded-full p-2 mr-3">
+                    <FiUser className="text-white" />
+                  </div>
+                  <span>Personalized experience</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="bg-blue-500 rounded-full p-2 mr-3">
+                    <FiMapPin className="text-white" />
+                  </div>
+                  <span>Location-based services</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="bg-blue-500 rounded-full p-2 mr-3">
+                    <FiLock className="text-white" />
+                  </div>
+                  <span>Secure data protection</span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="fullname" className="block text-sm font-medium text-gray-700">
-                Full Name *
-              </label>
-              <div className="mt-1">
+          {/* Right Side - Form */}
+          <div className="w-full md:w-1/2 p-8 md:p-10">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-800">Create Your Account</h2>
+              <p className="text-gray-600 mt-2">Fill in your details to get started</p>
+            </div>
+
+            {message && (
+              <div
+                className={`mb-6 p-4 rounded-lg ${
+                  messageType === 'success'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Full Name */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiUser className="text-gray-400" />
+                </div>
                 <input
-                  id="fullname"
-                  name="fullname"
                   type="text"
-                  required
+                  name="fullname"
                   value={formData.fullname}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your full name"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  placeholder="Full Name *"
                   disabled={loading}
                 />
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address *
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your email"
-                  disabled={loading}
-                />
+              {/* Email and Phone - Grid for medium+ screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiMail className="text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="Email Address *"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiPhone className="text-gray-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="Phone Number *"
+                    disabled={loading}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number *
-              </label>
-              <div className="mt-1">
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your phone number"
-                  disabled={loading}
-                />
+              {/* Location and Gender - Grid for medium+ screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiMapPin className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="Location *"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="relative">
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none bg-white"
+                    disabled={loading}
+                  >
+                    <option value="">Gender (Optional)</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiUser className="text-gray-400" />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                Location *
-              </label>
-              <div className="mt-1">
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  required
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your location"
-                  disabled={loading}
-                />
+              {/* Password Fields - Grid for medium+ screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiLock className="text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="Password *"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <FiEyeOff className="text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <FiEye className="text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiLock className="text-gray-400" />
+                  </div>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    placeholder="Confirm Password *"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <FiEyeOff className="text-gray-400 hover:text-gray-600" />
+                    ) : (
+                      <FiEye className="text-gray-400 hover:text-gray-600" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender (Optional)
-              </label>
-              <div className="mt-1">
-                <select
-                  id="gender"
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  className="block w-full px-3 py-2 border border-gray-300 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  disabled={loading}>
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                  <option value="prefer-not-to-say">Prefer not to say</option>
-                </select>
+              <div className="text-sm text-gray-500">
+                Password must be at least 8 characters long
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password *
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Create a password"
-                  disabled={loading}
-                />
-              </div>
-              <p className="mt-1 text-sm text-gray-500">
-                Password must be at least 6 characters long
-              </p>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password *
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Confirm your password"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            <div>
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                className={`w-full py-3 px-4 rounded-lg font-medium text-white transition ${
                   loading
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                }`}>
-                {loading ? 'Creating Account...' : 'Create Account'}
+                    : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                }`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Account...
+                  </span>
+                ) : (
+                  'Create Account'
+                )}
               </button>
-            </div>
-          </form>
+            </form>
 
-          <div className="mt-6">
-            <div className="text-center">
-              <span className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <a
-                  href="/signin/customer"
-                  className="font-medium text-blue-600 hover:text-blue-500">
-                  Sign in here
-                </a>
-              </span>
+            <div className="mt-6 text-center text-sm text-gray-600">
+              Already have an account?{' '}
+              <a href="/signin/customer" className="font-medium text-blue-600 hover:text-blue-500">
+                Sign in here
+              </a>
             </div>
           </div>
         </div>
