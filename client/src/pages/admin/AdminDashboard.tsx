@@ -3,7 +3,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend,
   AreaChart,
   Area,
   XAxis,
@@ -25,7 +24,7 @@ import {
   Clock,
 } from 'lucide-react';
 
-// Mock components for routes
+
 const AdminAgents = () => <div className="p-6">Agents Page</div>;
 const AdminCustomers = () => <div className="p-6">Customers Page</div>;
 const AdminCases = () => <div className="p-6">Cases Page</div>;
@@ -90,7 +89,7 @@ const AdminDashboard: React.FC = () => {
             {menuItems.map((item, index) => {
               const IconComponent = item.icon;
               return (
-                <li key={index}>
+                <li key={index + 1}>
                   <a
                     href={item.href}
                     className="flex items-center px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-700/50 hover:text-white transition-all duration-200 group">
@@ -276,7 +275,7 @@ const AdminDashboardContent: React.FC<{
                 outerRadius={120}
                 paddingAngle={5}
                 dataKey="value">
-                {data.map((entry, index) => (
+                {data.map((_, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
