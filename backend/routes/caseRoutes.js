@@ -7,11 +7,11 @@ const authMiddleware = require("../middleware/authMiddleware");
 router.post("/cases", authMiddleware, caseController.createCase);
 
 // Get latest case for customer
-router.get(
-  "/cases/latest/:customerId",
-  authMiddleware,
-  caseController.getLatestCase
-);
+// router.get(
+//   "/cases/latest/:customerId",
+//   authMiddleware,
+//   caseController.getLatestCase
+// );
 
 // Get all cases with filters
 router.get("/cases", authMiddleware, caseController.getCases);
