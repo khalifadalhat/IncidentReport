@@ -23,6 +23,9 @@ export interface ICustomer {
 export interface IAdmin {
   _id: string;
   customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  description: string;
   issue: string;
   department: string;
   status: string;
