@@ -10,7 +10,7 @@ router.post("/messages", authMiddleware, messageController.sendMessage);
 router.get(
   "/cases/:caseId/messages",
   authMiddleware,
-  messageController.getCaseMessages
+  messageController.getMessages
 );
 
 // Get initial messages (for socket.io connection)
