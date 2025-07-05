@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import api from "../../api";
 import Cookies from "js-cookie";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
+import api from "../../api";
 
 const CustomerLogin: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -60,9 +60,9 @@ const CustomerLogin: React.FC = () => {
       });
 
       Cookies.set("token", response.data.token, {
-        expires: 1, 
-        secure: true, 
-        sameSite: "strict", 
+        expires: 1,
+        secure: true,
+        sameSite: "strict",
       });
       localStorage.setItem("customer", JSON.stringify(response.data.customer));
 
