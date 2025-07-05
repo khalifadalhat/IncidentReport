@@ -56,29 +56,42 @@ app.use("/api", userRoutes);
 app.use("/api", messageRoutes);
 
 // Socket.IO Events
-io.on("connection", (socket) => {
-  console.log("A user connected");
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
 
-  Message.find()
-    .then((messages) => {
-      socket.emit("initialMessages", messages);
-    })
-    .catch((error) => {
-      console.error("Error fetching initial messages:", error);
-    });
-
-  socket.on("sendMessage", async (msg) => {
+  socket.on('joinCase', async (caseId) => {
     try {
-      const message = new Message(msg);
-      await message.save();
-      io.emit("receiveMessage", message);
+      socket.join(caseId);
+      const initialMessages = await messageController.getInitialMessages(caseId);
+      socket.emit('initialMessages', initialMessages);
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error joining case room:', error);
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
+  socket.on('sendMessage', async (msg) => {
+    try {
+      const { sender, text, caseId, recipient } = msg;
+
+      const newMessage = new Message({
+        sender,
+        text,
+        case: caseId,
+        recipient,
+        timestamp: new Date()
+      });
+      await newMessage.save();
+
+      await Case.findByIdAndUpdate(caseId, { updatedAt: new Date() });
+
+      io.to(caseId).emit('receiveMessage', newMessage);
+    } catch (error) {
+      console.error('Error handling message:', error);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
   });
 });
 
