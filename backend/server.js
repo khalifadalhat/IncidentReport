@@ -17,7 +17,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : ["http://localhost:5173"];
 
-const app = express(); 
+const app = express();
 const server = http.createServer(app);
 
 // CORS Configuration
@@ -56,42 +56,53 @@ app.use("/api", userRoutes);
 app.use("/api", messageRoutes);
 
 // Socket.IO Events
-io.on('connection', (socket) => {
-  console.log('New client connected:', socket.id);
+io.on("connection", (socket) => {
+  console.log("New client connected:", socket.id);
 
-  socket.on('joinCase', async (caseId) => {
+  socket.use((packet, next) => {
+    const token = socket.handshake.auth.token;
+    if (!verifyToken(token)) {
+      return next(new Error("Authentication error"));
+    }
+    next();
+  });
+
+  socket.on("joinCase", async (caseId) => {
     try {
+      const hasAccess = await verifyCaseAccess(socket.decoded.userId, caseId);
+      if (!hasAccess) {
+        return socket.emit("error", "Unauthorized case access");
+      }
+
       socket.join(caseId);
-      const initialMessages = await messageController.getInitialMessages(caseId);
-      socket.emit('initialMessages', initialMessages);
+      const initialMessages = await messageController.getInitialMessages(
+        caseId
+      );
+      socket.emit("initialMessages", initialMessages);
     } catch (error) {
-      console.error('Error joining case room:', error);
+      console.error("Error joining case room:", error);
+      socket.emit("error", "Failed to join case");
     }
   });
 
-  socket.on('sendMessage', async (msg) => {
+  socket.on("sendMessage", async (msg) => {
     try {
-      const { sender, text, caseId, recipient } = msg;
+      if (!msg.sender || !msg.text || !msg.caseId) {
+        return socket.emit("error", "Invalid message format");
+      }
 
-      const newMessage = new Message({
-        sender,
-        text,
-        case: caseId,
-        recipient,
-        timestamp: new Date()
+      const newMessage = await messageController.sendMessage({
+        body: msg,
+        io: io,
       });
-      await newMessage.save();
-
-      await Case.findByIdAndUpdate(caseId, { updatedAt: new Date() });
-
-      io.to(caseId).emit('receiveMessage', newMessage);
     } catch (error) {
-      console.error('Error handling message:', error);
+      console.error("Error handling message:", error);
+      socket.emit("error", "Failed to send message");
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
   });
 });
 
