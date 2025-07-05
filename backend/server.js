@@ -13,13 +13,18 @@ const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const Message = require("./models/Message");
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5173"];
 
+const app = express(); 
+const server = http.createServer(app);
+
+// CORS Configuration
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -29,9 +34,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cookieParser());
 
-const app = express();
-const server = http.createServer(app);
+// Socket.IO CORS Config
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -42,15 +48,6 @@ const io = new Server(server, {
 
 connectDB();
 
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
-app.use(express.json());
-app.use(cookieParser());
-
 // Routes
 app.use("/api/customers", customerRoutes);
 app.use("/api", caseRoutes);
@@ -58,6 +55,7 @@ app.use("/api/agents", agentRoutes);
 app.use("/api", userRoutes);
 app.use("/api", messageRoutes);
 
+// Socket.IO Events
 io.on("connection", (socket) => {
   console.log("A user connected");
 
@@ -85,5 +83,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 5000;
-
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
