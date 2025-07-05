@@ -97,7 +97,7 @@ const CustomerRegistration: React.FC = () => {
     } catch (error: any) {
       console.error('Registration error:', error);
       const errorMessage =
-        error.response?.data?.msg || error.response?.data?.error || 'Registration failed. Please try again.';
+        error.response?.data?.msg ?? error.response?.data?.error ?? 'Registration failed. Please try again.';
       showMessage(errorMessage, 'error');
     } finally {
       setLoading(false);
