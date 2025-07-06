@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import api from '../../api';
+import api from '../../utils/api';
 import { motion } from 'framer-motion';
 
 const ProblemType: React.FC = () => {
