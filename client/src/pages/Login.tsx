@@ -3,8 +3,9 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
 import { FiUser, FiLock, FiEye, FiEyeOff, FiShield } from "react-icons/fi";
+import api from "../utils/api";
+import { setCookie } from "../utils/cookie";
 
 interface LoginData {
   username: string;
@@ -12,7 +13,10 @@ interface LoginData {
 }
 
 const schema = yup.object().shape({
-  username: yup.string().required("Admin username is required"),
+  username: yup
+    .string()
+    .email("Must be a valid email")
+    .required("Email is required"),
   password: yup
     .string()
     .required("Password is required")
@@ -40,15 +44,24 @@ const Login: React.FC = () => {
   const onSubmit: SubmitHandler<LoginData> = async (data) => {
     try {
       setError(null);
-      const response = await api.post("/admin/login", data);
 
-      localStorage.setItem("adminToken", response.data.token);
-      localStorage.setItem("adminData", JSON.stringify(response.data.user));
+      const response = await api.post("/auth/login", {
+        email: data.username,
+        password: data.password,
+      });
 
-      // Redirect to admin dashboard
-      navigate("/admin/dashboard", { replace: true });
+      setCookie("token", response.data.token);
+      setCookie("userData", JSON.stringify(response.data.user));
+
+      if (response.data.user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (response.data.user.role === "agent") {
+        navigate("/agent/dashboard", { replace: true });
+      } else {
+        setError("Unknown user role.");
+      }
     } catch (err) {
-      console.error("Admin login error:", err);
+      console.error("Login error:", err);
       setError("Invalid credentials or insufficient privileges");
     }
   };
@@ -210,7 +223,7 @@ const Login: React.FC = () => {
                   Authenticating...
                 </span>
               ) : (
-                "Login as Admin"
+                "Login"
               )}
             </button>
 
