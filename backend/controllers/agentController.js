@@ -1,10 +1,11 @@
-const Agent = require('../models/agent');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const Agent = require("../models/agent");
+const bcrypt = require("bcrypt");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-  host: 'sandbox.smtp.mailtrap.io',
+  host: "sandbox.smtp.mailtrap.io",
   port: 2525,
   auth: {
     user: process.env.EMAIL_USER,
@@ -15,8 +16,9 @@ const transporter = nodemailer.createTransport({
 // Generate random password
 const generatePassword = () => {
   const length = 12;
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
   for (let i = 0; i < length; i++) {
     password += charset.charAt(Math.floor(Math.random() * charset.length));
   }
@@ -24,11 +26,17 @@ const generatePassword = () => {
 };
 
 // Send email with credentials
-const sendCredentialsEmail = async (email, fullname, password, department, role) => {
+const sendCredentialsEmail = async (
+  email,
+  fullname,
+  password,
+  department,
+  role
+) => {
   const mailOptions = {
     from: `"Customer Support" <process.env.EMAIL_USER>`,
     to: email,
-    subject: 'Your Agent Account Credentials - Welcome to the Team!',
+    subject: "Your Agent Account Credentials - Welcome to the Team!",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Welcome to Our Support Team!</h2>
@@ -57,10 +65,10 @@ const sendCredentialsEmail = async (email, fullname, password, department, role)
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully to:', email);
+    console.log("Email sent successfully to:", email);
   } catch (error) {
-    console.error('Error sending email:', error);
-    throw new Error('Failed to send email');
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
   }
 };
 
@@ -68,53 +76,44 @@ exports.createAgent = async (req, res) => {
   try {
     const { fullname, email, department, role } = req.body;
 
-    // Check if agent already exists
     const existingAgent = await Agent.findOne({ email });
     if (existingAgent) {
-      return res.status(400).json({ error: 'Agent with this email already exists' });
+      return res
+        .status(400)
+        .json({ error: "Agent with this email already exists" });
     }
 
-    // Generate random password
     const generatedPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    // Create new agent
     const newAgent = new Agent({
       fullname,
       email,
-      password: generatedPassword,
+      password: hashedPassword,
       department,
-      role,
+      role: "agent",
     });
 
     await newAgent.save();
 
-    // Send email with credentials
-    await sendCredentialsEmail(email, fullname, generatedPassword, department, role);
+    await sendCredentialsEmail(
+      email,
+      fullname,
+      generatedPassword,
+      department,
+      newAgent.role
+    );
 
-    // Return agent data without password
-    const agentResponse = {
-      _id: newAgent._id,
-      fullname: newAgent.fullname,
-      email: newAgent.email,
-      department: newAgent.department,
-      role: newAgent.role,
-      status: newAgent.status,
-      createdAt: newAgent.createdAt,
-    };
-
-    res.status(201).json({
-      agent: agentResponse,
-      message: 'Agent created successfully and credentials sent via email',
-    });
+    res.status(201).json({ message: "Agent created successfully" });
   } catch (err) {
-    console.error('Error creating agent:', err);
+    console.error("Error creating agent:", err);
     res.status(400).json({ error: err.message });
   }
 };
 
 exports.getAgents = async (req, res) => {
   try {
-    const agents = await Agent.find().select('-password');
+    const agents = await Agent.find().select("-password");
     res.status(200).json({ agents });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -124,9 +123,9 @@ exports.getAgents = async (req, res) => {
 exports.getAgentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const agent = await Agent.findById(id).select('-password');
+    const agent = await Agent.findById(id).select("-password");
     if (!agent) {
-      return res.status(404).json({ error: 'Agent not found' });
+      return res.status(404).json({ error: "Agent not found" });
     }
     res.status(200).json({ agent });
   } catch (err) {
@@ -142,7 +141,7 @@ exports.updateAgent = async (req, res) => {
       id,
       { fullname, email, department, role },
       { new: true }
-    ).select('-password');
+    ).select("-password");
     res.status(200).json({ agent: updatedAgent });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -153,7 +152,7 @@ exports.deleteAgent = async (req, res) => {
   try {
     const { id } = req.params;
     await Agent.findByIdAndDelete(id);
-    res.status(200).json({ message: 'Agent deleted successfully' });
+    res.status(200).json({ message: "Agent deleted successfully" });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -166,11 +165,12 @@ exports.resetAgentPassword = async (req, res) => {
     const agent = await Agent.findById(id);
 
     if (!agent) {
-      return res.status(404).json({ error: 'Agent not found' });
+      return res.status(404).json({ error: "Agent not found" });
     }
 
     const newPassword = generatePassword();
-    agent.password = newPassword;
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    agent.password = hashedPassword;
     agent.isFirstLogin = true;
     await agent.save();
 
@@ -182,7 +182,9 @@ exports.resetAgentPassword = async (req, res) => {
       agent.role
     );
 
-    res.status(200).json({ message: 'Password reset successfully and sent via email' });
+    res
+      .status(200)
+      .json({ message: "Password reset successfully and sent via email" });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
