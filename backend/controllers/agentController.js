@@ -1,19 +1,16 @@
 const Agent = require("../models/agent");
-const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 
-// Email configuration
-const transporter = nodemailer.createTransport({
-  host: "sandbox.smtp.mailtrap.io",
-  port: 2525,
+const resendTransporter = nodemailer.createTransporter({
+  host: "smtp.resend.com",
+  port: 587,
+  secure: false,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: "resend",
+    pass: process.env.RESEND_API_KEY,
   },
 });
 
-// Generate random password
 const generatePassword = () => {
   const length = 12;
   const charset =
@@ -34,7 +31,7 @@ const sendCredentialsEmail = async (
   role
 ) => {
   const mailOptions = {
-    from: `"Customer Support" <process.env.EMAIL_USER>`,
+    from: `"Customer Support" <onboarding@resend.dev>`, 
     to: email,
     subject: "Your Agent Account Credentials - Welcome to the Team!",
     html: `
@@ -64,11 +61,14 @@ const sendCredentialsEmail = async (
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    const info = await resendTransporter.sendMail(mailOptions);
     console.log("Email sent successfully to:", email);
+    console.log("Message ID:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending email:", error);
-    throw new Error("Failed to send email");
+    console.error("Error details:", error.message);
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
@@ -84,18 +84,18 @@ exports.createAgent = async (req, res) => {
     }
 
     const generatedPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     const newAgent = new Agent({
       fullname,
       email,
-      password: hashedPassword,
+      password: generatedPassword,
       department,
       role: "agent",
     });
 
     await newAgent.save();
 
+    // Send email after successful save
     await sendCredentialsEmail(
       email,
       fullname,
@@ -104,10 +104,20 @@ exports.createAgent = async (req, res) => {
       newAgent.role
     );
 
-    res.status(201).json({ message: "Agent created successfully" });
+    res.status(201).json({ 
+      message: "Agent created successfully and credentials sent via email" 
+    });
   } catch (err) {
     console.error("Error creating agent:", err);
-    res.status(400).json({ error: err.message });
+    
+    // More specific error handling
+    if (err.message.includes("Failed to send email")) {
+      res.status(500).json({ 
+        error: "Agent created but failed to send email. Please reset password to send credentials." 
+      });
+    } else {
+      res.status(400).json({ error: err.message });
+    }
   }
 };
 
@@ -169,8 +179,8 @@ exports.resetAgentPassword = async (req, res) => {
     }
 
     const newPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    agent.password = hashedPassword;
+
+    agent.password = newPassword;
     agent.isFirstLogin = true;
     await agent.save();
 
@@ -186,6 +196,7 @@ exports.resetAgentPassword = async (req, res) => {
       .status(200)
       .json({ message: "Password reset successfully and sent via email" });
   } catch (err) {
+    console.error("Error resetting password:", err);
     res.status(400).json({ error: err.message });
   }
 };
