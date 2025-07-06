@@ -1,7 +1,13 @@
 const Agent = require("../models/agent");
-const { Resend } = require("resend");
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const gmailTransporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 const generatePassword = () => {
   const length = 12;
@@ -46,17 +52,18 @@ const sendCredentialsEmail = async (
     </div>
   `;
 
-  try {
-    const response = await resend.emails.send({
-      from: "Customer Support <onboarding@resend.dev>", 
-      to: email,
-      subject: "Your Agent Account Credentials - Welcome to the Team!",
-      html: htmlContent,
-    });
+  const mailOptions = {
+    from: `"Customer Support" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: "Your Agent Account Credentials - Welcome to the Team!",
+    html: htmlContent,
+  };
 
+  try {
+    const info = await gmailTransporter.sendMail(mailOptions);
     console.log("Email sent successfully to:", email);
-    console.log("Resend Response:", response);
-    return response;
+    console.log("Message ID:", info.messageId);
+    return info;
   } catch (error) {
     console.error("Error sending email:", error);
     throw new Error(`Failed to send email: ${error.message}`);
