@@ -9,6 +9,7 @@ require("dotenv").config();
 const customerRoutes = require("./routes/customerRoutes");
 const caseRoutes = require("./routes/caseRoutes");
 const agentRoutes = require("./routes/agentRoutes");
+const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const Message = require("./models/Message");
@@ -49,6 +50,7 @@ const io = new Server(server, {
 connectDB();
 
 // Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api", caseRoutes);
 app.use("/api/agents", agentRoutes);
