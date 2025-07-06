@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import api from '../../api';
+import api from '../../utils/api';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const CustomerRegistration: React.FC = () => {
