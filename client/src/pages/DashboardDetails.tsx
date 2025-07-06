@@ -31,11 +31,12 @@ const DashboardDetails: React.FC = () => {
               Get Started Free
             </Link>
             <Link
-              to="/login"
+              to="/signin/customer"
               className="px-8 py-4 bg-white text-blue-600 border border-blue-600 rounded-lg text-lg font-medium hover:bg-blue-50 transition shadow-lg hover:shadow-xl"
             >
               Login
             </Link>
+            
           </div>
           <div className="relative h-64 md:h-96 bg-blue-100 rounded-2xl overflow-hidden shadow-inner">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-20"></div>
