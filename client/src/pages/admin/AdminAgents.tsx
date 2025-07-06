@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { IAgent } from '../interface/Icase';
-import api from '../../api';
+import api from '../../utils/api';
 
 const AdminAgents: React.FC = () => {
   const [agents, setAgents] = useState<IAgent[]>([]);
