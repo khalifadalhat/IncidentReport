@@ -28,29 +28,6 @@ exports.createUser = async (req, res) => {
   }
 };
 
-exports.loginUser = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-
-    const token = jwt.sign({ userId: user._id }, 'BIZZAPP');
-    user.token = token;
-    await user.save();
-
-    res.status(200).json({ user, token });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
 
 exports.getUsers = [
   async (req, res) => {
