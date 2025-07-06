@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import api from "../../api";
 import {
   FiSearch,
   FiUser,
@@ -10,6 +9,7 @@ import {
   FiEdit2,
 } from "react-icons/fi";
 import { IAdmin, IAgent } from "../interface/Icase";
+import api from "../../utils/api";
 
 const AdminCases: React.FC = () => {
   const [cases, setCases] = useState<IAdmin[]>([]);
