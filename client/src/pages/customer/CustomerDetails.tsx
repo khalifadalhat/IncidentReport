@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api';
+import api from '../../utils/api';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiChevronRight } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
@@ -19,7 +19,7 @@ const CustomerDetails: React.FC = () => {
         const savedCustomer = localStorage.getItem('customer');
         if (savedCustomer) {
           const parsedCustomer = JSON.parse(savedCustomer);
-          setCustomer(parsedCustomer);
+          setCustomer(parsedCustomer.customer);
           return;
         }
 
