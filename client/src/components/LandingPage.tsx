@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   FiMessageSquare,
   FiUsers,
@@ -11,24 +11,15 @@ import {
 } from "react-icons/fi";
 
 const LandingPage: React.FC = () => {
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [adminCredentials, setAdminCredentials] = useState({
-    username: "",
-    password: "",
-  });
-
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Admin login attempted with:", adminCredentials);
-    window.location.href = "/admin";
-  };
-
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Admin Login Indicator & Modal */}
       <div className="fixed top-4 right-4 z-50">
         <button
-          onClick={() => setShowAdminLogin(true)}
+          onClick={() => {
+            navigate("/login");
+          }}
           className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-full text-sm font-medium hover:bg-gray-700 transition shadow-lg"
         >
           <FiLock className="w-4 h-4" />
@@ -36,78 +27,7 @@ const LandingPage: React.FC = () => {
         </button>
       </div>
 
-      {showAdminLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FiShield className="text-blue-600" />
-                Admin Portal
-              </h3>
-              <button
-                onClick={() => setShowAdminLogin(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={adminCredentials.username}
-                  onChange={(e) =>
-                    setAdminCredentials({
-                      ...adminCredentials,
-                      username: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="admin_username"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={adminCredentials.password}
-                  onChange={(e) =>
-                    setAdminCredentials({
-                      ...adminCredentials,
-                      password: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="••••••••"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
-              >
-                Login as Admin
-              </button>
-
-              <div className="text-center text-xs text-gray-500 mt-4">
-                <FiLock className="inline mr-1" />
-                Secure admin access only
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Rest of your landing page content */}
+      {/*landing page content */}
       <section className="py-20 px-4 max-w-7xl mx-auto text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
