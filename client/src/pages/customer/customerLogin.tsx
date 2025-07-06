@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { FiMail, FiLock, FiEye, FiEyeOff, FiUser } from "react-icons/fi";
-import api from "../../api";
+import api from "../../utils/api";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
