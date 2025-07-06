@@ -1,6 +1,5 @@
 const User = require("../models/user");
 const Agent = require("../models/agent");
-const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 exports.login = async (req, res) => {
@@ -16,14 +15,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user._id, role: user.role }, "BIZZAPP", {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     res.status(200).json({
       token,
@@ -31,7 +32,7 @@ exports.login = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
-        name: user.username || user.fullname,
+        name: user.fullname || user.email.split("@")[0],
       },
     });
   } catch (err) {
