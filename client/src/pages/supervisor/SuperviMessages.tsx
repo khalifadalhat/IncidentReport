@@ -1,6 +1,6 @@
 import React from 'react';
 import io from 'socket.io-client';
-import api from '../../api';
+import api from '../../utils/api';
 
 const socket = io(api.defaults.baseURL ?? '', {
   withCredentials: true,
