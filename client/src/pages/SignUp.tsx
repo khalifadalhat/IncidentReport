@@ -3,16 +3,16 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
-import api from '../api';
+import api from '../utils/api';
 
 interface SignUpData {
-  username: string;
+  email: string;
   password: string;
   role: string;
 }
 
 const schema = yup.object().shape({
-  username: yup.string().required('Username is required'),
+  email: yup.string().email('Must be a valid email').required('Email is required'),
   password: yup
     .string()
     .required('Password is required')
@@ -49,18 +49,18 @@ const SignupForm: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
           <div>
             <label
-              htmlFor="username"
+              htmlFor="email"
               className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-              Username:
+              email:
             </label>
             <input
               type="text"
-              id="username"
-              {...register('username')}
-              placeholder="username"
+              id="email"
+              {...register('email')}
+              placeholder="email"
               className="mb-4 block text-gray-900 w-full rounded-md border border-gray-300 p-2.5 shadow-sm"
             />
-            {errors.username && <p className="text-red-500 text-sm">{errors.username.message}</p>}
+            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
           </div>
           <div>
             <label
