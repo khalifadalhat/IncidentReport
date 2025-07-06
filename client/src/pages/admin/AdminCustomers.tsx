@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ICustomer } from "../interface/Icase";
-import api from "../../api";
+import api from "../../utils/api";
 import {
   FiSearch,
   FiEdit2,
