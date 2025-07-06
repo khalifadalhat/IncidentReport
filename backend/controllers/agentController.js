@@ -1,7 +1,7 @@
 const Agent = require("../models/agent");
 const nodemailer = require("nodemailer");
 
-const resendTransporter = nodemailer.createTransporter({
+const resendTransporter = nodemailer.createTransport({
   host: "smtp.resend.com",
   port: 587,
   secure: false,
