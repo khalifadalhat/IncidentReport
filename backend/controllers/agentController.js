@@ -1,15 +1,7 @@
 const Agent = require("../models/agent");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
-const resendTransporter = nodemailer.createTransport({
-  host: "smtp.resend.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "resend",
-    pass: process.env.RESEND_API_KEY,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const generatePassword = () => {
   const length = 12;
@@ -22,7 +14,6 @@ const generatePassword = () => {
   return password;
 };
 
-// Send email with credentials
 const sendCredentialsEmail = async (
   email,
   fullname,
@@ -30,44 +21,44 @@ const sendCredentialsEmail = async (
   department,
   role
 ) => {
-  const mailOptions = {
-    from: `"Customer Support" <onboarding@resend.dev>`, 
-    to: email,
-    subject: "Your Agent Account Credentials - Welcome to the Team!",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #333;">Welcome to Our Support Team!</h2>
-        <p>Dear ${fullname},</p>
-        <p>Your agent account has been successfully created. Here are your login credentials:</p>
-        
-        <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-          <h3>Login Details:</h3>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Password:</strong> ${password}</p>
-          <p><strong>Department:</strong> ${department}</p>
-          <p><strong>Role:</strong> ${role}</p>
-        </div>
-        
-        <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
-          <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
-        </div>
-        
-        <p>You can now log in to the system using these credentials.</p>
-        <p>If you have any questions or need assistance, please contact your supervisor.</p>
-        
-        <p>Best regards,<br>Admin Team</p>
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #333;">Welcome to Our Support Team!</h2>
+      <p>Dear ${fullname},</p>
+      <p>Your agent account has been successfully created. Here are your login credentials:</p>
+      
+      <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        <h3>Login Details:</h3>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Password:</strong> ${password}</p>
+        <p><strong>Department:</strong> ${department}</p>
+        <p><strong>Role:</strong> ${role}</p>
       </div>
-    `,
-  };
+      
+      <div style="background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+        <p><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
+      </div>
+      
+      <p>You can now log in to the system using these credentials.</p>
+      <p>If you have any questions or need assistance, please contact your supervisor.</p>
+      
+      <p>Best regards,<br>Admin Team</p>
+    </div>
+  `;
 
   try {
-    const info = await resendTransporter.sendMail(mailOptions);
+    const response = await resend.emails.send({
+      from: "Customer Support <onboarding@resend.dev>", 
+      to: email,
+      subject: "Your Agent Account Credentials - Welcome to the Team!",
+      html: htmlContent,
+    });
+
     console.log("Email sent successfully to:", email);
-    console.log("Message ID:", info.messageId);
-    return info;
+    console.log("Resend Response:", response);
+    return response;
   } catch (error) {
     console.error("Error sending email:", error);
-    console.error("Error details:", error.message);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };
@@ -104,16 +95,17 @@ exports.createAgent = async (req, res) => {
       newAgent.role
     );
 
-    res.status(201).json({ 
-      message: "Agent created successfully and credentials sent via email" 
+    res.status(201).json({
+      message: "Agent created successfully and credentials sent via email",
     });
   } catch (err) {
     console.error("Error creating agent:", err);
-    
+
     // More specific error handling
     if (err.message.includes("Failed to send email")) {
-      res.status(500).json({ 
-        error: "Agent created but failed to send email. Please reset password to send credentials." 
+      res.status(500).json({
+        error:
+          "Agent created but failed to send email. Please reset password to send credentials.",
       });
     } else {
       res.status(400).json({ error: err.message });
