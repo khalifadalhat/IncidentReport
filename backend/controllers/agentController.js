@@ -10,14 +10,28 @@ const gmailTransporter = nodemailer.createTransport({
 });
 
 const generatePassword = () => {
-  const length = 12;
-  const charset =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  const length = 12; 
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const special = "@$!%*?&";
+  const all = lowercase + uppercase + numbers + special;
+
   let password = "";
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
+
+  password += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+  password += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+  password += special.charAt(Math.floor(Math.random() * special.length));
+
+  for (let i = 4; i < length; i++) {
+    password += all.charAt(Math.floor(Math.random() * all.length));
   }
-  return password;
+
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
 };
 
 const sendCredentialsEmail = async (
