@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
-import api from '../../api';
+import api from '../../utils/api';
 import { format } from 'date-fns';
 import { FiSend, FiUser, FiMessageSquare, FiClock } from 'react-icons/fi';
 import { motion } from 'framer-motion';
