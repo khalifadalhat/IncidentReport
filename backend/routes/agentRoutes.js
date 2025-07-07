@@ -9,7 +9,6 @@ const {
   resetAgentPassword,
 } = require('../controllers/agentController');
 
-// Agent routes
 router.post('/', createAgent);
 router.get('/', getAgents);
 router.get('/:id', getAgentById);
