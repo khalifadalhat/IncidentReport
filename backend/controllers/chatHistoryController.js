@@ -4,7 +4,7 @@ const Agent = require("../models/agent");
 const Customer = require("../models/customer");
 
 // Get customer's chat history - all their cases and messages
-exports.getCustomerChatHistory = async (req, res) => {
+const getCustomerChatHistory = async (req, res) => {
   try {
     const customerId = req.user._id || req.user.customerId;
 
@@ -49,7 +49,7 @@ exports.getCustomerChatHistory = async (req, res) => {
 };
 
 // Get specific case chat for customer
-exports.getCustomerCaseChat = async (req, res) => {
+const getCustomerCaseChat = async (req, res) => {
   try {
     const { caseId } = req.params;
     const customerId = req.user._id || req.user.customerId;
@@ -84,7 +84,7 @@ exports.getCustomerCaseChat = async (req, res) => {
 };
 
 // Get agent's chat history - all cases they've handled
-exports.getAgentChatHistory = async (req, res) => {
+const getAgentChatHistory = async (req, res) => {
   try {
     const agentId = req.user._id || req.userId;
 
@@ -129,7 +129,7 @@ exports.getAgentChatHistory = async (req, res) => {
 };
 
 // Get specific case chat for agent
-exports.getAgentCaseChat = async (req, res) => {
+const getAgentCaseChat = async (req, res) => {
   try {
     const { caseId } = req.params;
     const agentId = req.user._id || req.userId;
@@ -164,7 +164,7 @@ exports.getAgentCaseChat = async (req, res) => {
 };
 
 // Get all customers an agent has interacted with
-exports.getAgentCustomers = async (req, res) => {
+const getAgentCustomers = async (req, res) => {
   try {
     const agentId = req.user._id || req.userId;
 
@@ -224,7 +224,7 @@ exports.getAgentCustomers = async (req, res) => {
 };
 
 // Admin route - Get all chat history
-exports.getAllChatHistory = async (req, res) => {
+const getAllChatHistory = async (req, res) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const skip = (page - 1) * limit;
@@ -277,7 +277,7 @@ exports.getAllChatHistory = async (req, res) => {
 };
 
 // Admin route - Get specific agent's chat history
-exports.getAgentChatHistoryByAdmin = async (req, res) => {
+const getAgentChatHistoryByAdmin = async (req, res) => {
   try {
     const { agentId } = req.params;
 
@@ -323,4 +323,12 @@ exports.getAgentChatHistoryByAdmin = async (req, res) => {
   }
 };
 
-
+module.exports = {
+  getCustomerChatHistory,
+  getCustomerCaseChat,
+  getAgentChatHistory,
+  getAgentCaseChat,
+  getAgentCustomers,
+  getAllChatHistory,
+  getAgentChatHistoryByAdmin,
+};
