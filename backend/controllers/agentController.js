@@ -122,7 +122,6 @@ exports.createAgent = async (req, res) => {
   } catch (err) {
     console.error("Error creating agent:", err);
 
-    // More specific error handling
     if (err.message.includes("Failed to send email")) {
       res.status(500).json({
         error:
