@@ -13,7 +13,7 @@ router.put('/cases/accept/:caseId', authMiddleware(), caseController.acceptCase)
 
 router.put('/cases/reject/:caseId', authMiddleware(), caseController.rejectCase);
 
-router.put('/cases/assign', authMiddleware(['agent']), caseController.assignCase);
+router.put('/cases/assign', authMiddleware(['admin']), caseController.assignCase);
 
 router.put('/cases/status/:caseId', authMiddleware(), caseController.updateCaseStatus);
 
