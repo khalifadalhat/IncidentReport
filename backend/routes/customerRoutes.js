@@ -14,8 +14,8 @@ router.post('/register', registerCustomer);
 router.post('/login', loginCustomer);
 
 // Protected routes
-router.get('/profile', authMiddleware, getCustomerProfile);
-router.put('/profile', authMiddleware, updateCustomerProfile);
+router.get('/profile', authMiddleware(), getCustomerProfile);
+router.put('/profile', authMiddleware(), updateCustomerProfile);
 
 // Admin only routes
 router.get('/', getCustomers);
