@@ -165,7 +165,8 @@ exports.updateCustomerProfile = async (req, res) => {
 
 // Authentication middleware
 exports.authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const authHeader = req.header('Authorization');
+  const token = authHeader ? authHeader.replace('Bearer ', '') : null;
 
   if (!token) {
     return res.status(401).json({ msg: 'No token, authorization denied' });
