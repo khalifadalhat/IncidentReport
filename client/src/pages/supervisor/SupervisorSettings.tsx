@@ -1,13 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { IAgent } from '../interface/Icase';
+import { IAgent } from '../../Types/Icase';
 
 const SupervisorSettings: React.FC = () => {
   const [agents, setAgents] = useState<IAgent[]>([]);
   const [currentAgent, setCurrentAgent] = useState<IAgent | null>(null);
-  const [newAgent, setNewAgent] = useState({ fullname: '', email: '', department: 'Funding Wallet', role: 'agent' });
+  const [newAgent, setNewAgent] = useState({
+    fullname: '',
+    email: '',
+    department: 'Funding Wallet',
+    role: 'agent',
+  });
 
-  const departments = ['Funding Wallet', 'Buying Airtime', 'Buying Internet Data', 'E-commerce Section', 'Fraud Related Problems', 'General Services'];
+  const departments = [
+    'Funding Wallet',
+    'Buying Airtime',
+    'Buying Internet Data',
+    'E-commerce Section',
+    'Fraud Related Problems',
+    'General Services',
+  ];
   const roles = ['agent', 'supervisor'];
 
   useEffect(() => {
@@ -19,11 +31,15 @@ const SupervisorSettings: React.FC = () => {
   const handleCreateOrUpdateAgent = async () => {
     if (currentAgent) {
       // Update existing agent
-      await axios.put(`http://localhost:5000/agents/${currentAgent._id}`, newAgent).then(response => {
-        setAgents(agents.map(agent => (agent._id === currentAgent._id ? response.data.agent : agent)));
-        setNewAgent({ fullname: '', email: '', department: 'Funding Wallet', role: 'agent' });
-        setCurrentAgent(null);
-      });
+      await axios
+        .put(`http://localhost:5000/agents/${currentAgent._id}`, newAgent)
+        .then(response => {
+          setAgents(
+            agents.map(agent => (agent._id === currentAgent._id ? response.data.agent : agent))
+          );
+          setNewAgent({ fullname: '', email: '', department: 'Funding Wallet', role: 'agent' });
+          setCurrentAgent(null);
+        });
     } else {
       // Create new agent
       await axios.post('http://localhost:5000/agents', newAgent).then(response => {
@@ -41,7 +57,12 @@ const SupervisorSettings: React.FC = () => {
 
   const handleEditAgent = (agent: IAgent) => {
     setCurrentAgent(agent);
-    setNewAgent({ fullname: agent.fullname, email: agent.email, department: agent.department, role: agent.role });
+    setNewAgent({
+      fullname: agent.fullname,
+      email: agent.email,
+      department: agent.department,
+      role: agent.role,
+    });
   };
 
   return (
@@ -65,19 +86,21 @@ const SupervisorSettings: React.FC = () => {
         <select
           value={newAgent.department}
           onChange={e => setNewAgent({ ...newAgent, department: e.target.value })}
-          className="border p-2 mr-2 rounded"
-        >
+          className="border p-2 mr-2 rounded">
           {departments.map(dept => (
-            <option key={dept} value={dept}>{dept}</option>
+            <option key={dept} value={dept}>
+              {dept}
+            </option>
           ))}
         </select>
         <select
           value={newAgent.role}
           onChange={e => setNewAgent({ ...newAgent, role: e.target.value })}
-          className="border p-2 mr-2 rounded"
-        >
+          className="border p-2 mr-2 rounded">
           {roles.map(role => (
-            <option key={role} value={role}>{role}</option>
+            <option key={role} value={role}>
+              {role}
+            </option>
           ))}
         </select>
         <button onClick={handleCreateOrUpdateAgent} className="bg-blue-500 text-white p-2 rounded">
@@ -102,8 +125,16 @@ const SupervisorSettings: React.FC = () => {
               <td className="border px-4 py-2">{agent.department}</td>
               <td className="border px-4 py-2">{agent.role}</td>
               <td className="border px-4 py-2">
-                <button onClick={() => handleEditAgent(agent)} className="bg-yellow-500 text-white p-2 rounded">Edit</button>
-                <button onClick={() => handleDeleteAgent(agent._id)} className="bg-red-500 text-white p-2 rounded">Delete</button>
+                <button
+                  onClick={() => handleEditAgent(agent)}
+                  className="bg-yellow-500 text-white p-2 rounded">
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteAgent(agent._id)}
+                  className="bg-red-500 text-white p-2 rounded">
+                  Delete
+                </button>
               </td>
             </tr>
           ))}

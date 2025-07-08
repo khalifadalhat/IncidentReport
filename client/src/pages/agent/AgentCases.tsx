@@ -1,77 +1,34 @@
-import React, { useEffect, useState } from "react";
-import { ICase } from "../interface/Icase";
-import api from "../../utils/api";
-import {
-  FiMail,
-  FiPlus,
-  FiEye,
-  FiRefreshCw,
-  FiCheckCircle,
-  FiClock,
-  FiUsers,
-} from "react-icons/fi";
-import StatCard from "../../components/NewStat";
+import React from 'react';
+import { FiMail, FiEye, FiRefreshCw, FiCheckCircle, FiClock, FiUsers } from 'react-icons/fi';
+import StatCard from '../../components/NewStat';
+import { useOutletContext } from 'react-router-dom';
+import { useAgentCasesStore } from '../../store/agent/useAgentCasesStore';
+import { useFetchAgentCases } from '../../hook/agent/useAgentCases';
 
-interface AgentCasesProps {
-  agentId: string;
-}
+const AgentCases: React.FC = () => {
+  const context = useOutletContext<{ agentId: string }>();
+  const agentId = context?.agentId;
 
-const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
-  const [pendingCases, setPendingCases] = useState<ICase[]>([]);
-  const [closedCases, setClosedCases] = useState<ICase[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    pending: 0,
-    resolved: 0,
-    customers: 0,
-    satisfaction: 0,
-  });
+  const {
+    pendingCases,
+    closedCases,
+    stats,
+    loading,
+    error,
+    // setPendingCases,
+    // setClosedCases,
+    // setStats,
+    // setLoading,
+    // setError,
+  } = useAgentCasesStore();
 
-  useEffect(() => {
-    fetchCases();
-  }, []);
-
-  const fetchCases = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get("/cases");
-      const casesWithAgents = await Promise.all(
-        response.data.cases.map(async (singleCase: ICase) => {
-          if (singleCase.assignedAgent) {
-            const agentResponse = await api.get(`/cases/agent/${agentId}`);
-            return { ...singleCase, agent: agentResponse.data.agent.fullname };
-          }
-          return { ...singleCase, agent: "Not Assigned" };
-        })
-      );
-
-      const pending = casesWithAgents.filter(
-        (singleCase: ICase) => singleCase.status === "pending"
-      );
-      const closed = casesWithAgents.filter(
-        (singleCase: ICase) => singleCase.status === "closed"
-      );
-
-      setPendingCases(pending);
-      setClosedCases(closed);
-      setStats({
-        pending: pending.length,
-        resolved: closed.length,
-        customers: new Set(casesWithAgents.map((c) => c.customerName)).size,
-        satisfaction: Math.floor(Math.random() * 30) + 70, // Mock data
-      });
-    } catch (error) {
-      console.error("Error fetching cases:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { refetch } = useFetchAgentCases(agentId);
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -83,6 +40,21 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="text-center py-8">
+          <div className="text-red-500 text-lg">{error}</div>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+            <FiRefreshCw className="mr-2" /> Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -90,13 +62,9 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
         <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
         <div className="flex space-x-2 mt-2 md:mt-0">
           <button
-            onClick={fetchCases}
-            className="flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
+            onClick={() => refetch()}
+            className="flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
             <FiRefreshCw className="mr-2" /> Refresh
-          </button>
-          <button className="flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
-            <FiPlus className="mr-2" /> New Case
           </button>
         </div>
       </div>
@@ -151,8 +119,8 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
                 From: Khalifa Dalhat • {formatDate(new Date().toISOString())}
               </p>
               <p className="mt-2 text-sm text-gray-600">
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                Voluptatem nihil alias voluptatibus sint eos sed soluta facere!
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatem nihil alias
+                voluptatibus sint eos sed soluta facere!
               </p>
               <div className="mt-3 flex space-x-2">
                 <button className="inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50">
@@ -188,12 +156,10 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {pendingCases.slice(0, 5).map((singleCase) => (
+              {pendingCases.slice(0, 5).map(singleCase => (
                 <TableRow key={singleCase._id}>
                   <TableCell>{singleCase.customerName}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {singleCase.issue}
-                  </TableCell>
+                  <TableCell className="max-w-xs truncate">{singleCase.issue}</TableCell>
                   <TableCell>{singleCase.agent}</TableCell>
                   <TableCell>{formatDate(singleCase.createdAt)}</TableCell>
                   <TableCell>
@@ -216,9 +182,7 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
       {/* Resolved Cases */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">
-            Recently Resolved
-          </h2>
+          <h2 className="text-lg font-medium text-gray-900">Recently Resolved</h2>
           <button className="text-sm font-medium text-blue-600 hover:text-blue-500">
             View All
           </button>
@@ -236,12 +200,10 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {closedCases.slice(0, 5).map((singleCase) => (
+              {closedCases.slice(0, 5).map(singleCase => (
                 <TableRow key={singleCase._id}>
                   <TableCell>{singleCase.customerName}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {singleCase.issue}
-                  </TableCell>
+                  <TableCell className="max-w-xs truncate">{singleCase.issue}</TableCell>
                   <TableCell>{singleCase.agent}</TableCell>
                   <TableCell>{formatDate(singleCase.createdAt)}</TableCell>
                   <TableCell>
@@ -264,7 +226,6 @@ const AgentCases: React.FC<AgentCasesProps> = ({ agentId }) => {
   );
 };
 
-// Reusable table components
 const TableHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
     {children}
@@ -278,12 +239,8 @@ const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const TableCell: React.FC<{
   children: React.ReactNode;
   className?: string;
-}> = ({ children, className = "" }) => (
-  <td
-    className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 ${className}`}
-  >
-    {children}
-  </td>
+}> = ({ children, className = '' }) => (
+  <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 ${className}`}>{children}</td>
 );
 
 export default AgentCases;

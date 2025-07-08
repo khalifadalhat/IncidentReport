@@ -1,5 +1,3 @@
-import React, { useEffect, useState } from "react";
-import { ICustomer } from "../interface/Icase";
 import {
   FiUser,
   FiPhone,
@@ -8,46 +6,28 @@ import {
   FiRefreshCw,
   FiAlertCircle,
   FiEye,
-} from "react-icons/fi";
-import api from "../../utils/api";
+} from 'react-icons/fi';
+import { useCustomerStore } from '../../store/agent/useCustomerStore';
+import { useCustomers } from '../../hook/customer/useCustomers';
 
 const AgentCustomers: React.FC = () => {
-  const [customers, setCustomers] = useState<ICustomer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get("/customers");
-      setCustomers(response.data.customers);
-    } catch (err) {
-      console.error("Error fetching customers:", err);
-      setError("Failed to load customers. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { customers, loading, error } = useCustomerStore();
+  const { refetch } = useCustomers();
 
   const formatPhoneNumber = (phone: string) => {
-    return phone.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3");
+    return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
   };
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "inactive":
-        return "bg-gray-100 text-gray-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return "bg-blue-100 text-blue-800";
+        return 'bg-blue-100 text-blue-800';
     }
   };
 
@@ -67,9 +47,8 @@ const AgentCustomers: React.FC = () => {
           <h3 className="mt-2 text-lg font-medium text-gray-900">{error}</h3>
           <div className="mt-6">
             <button
-              onClick={fetchCustomers}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-            >
+              onClick={() => refetch()}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
               <FiRefreshCw className="mr-2" /> Retry
             </button>
           </div>
@@ -82,18 +61,13 @@ const AgentCustomers: React.FC = () => {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="mb-4 sm:mb-0">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Customer Management
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {customers.length} customers in the system
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900">Customer Management</h2>
+          <p className="mt-1 text-sm text-gray-500">{customers.length} customers in the system</p>
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={fetchCustomers}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
+            onClick={() => refetch()}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             <FiRefreshCw className="mr-2" /> Refresh
           </button>
         </div>
@@ -102,9 +76,7 @@ const AgentCustomers: React.FC = () => {
       {customers.length === 0 ? (
         <div className="text-center py-12">
           <FiUser className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">
-            No customers found
-          </h3>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">No customers found</h3>
           <p className="mt-1 text-sm text-gray-500">
             There are currently no customers in the system.
           </p>
@@ -122,7 +94,7 @@ const AgentCustomers: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {customers.map((customer) => (
+              {customers.map(customer => (
                 <TableRow key={customer._id}>
                   <TableCell>
                     <div className="flex items-center">
@@ -130,9 +102,7 @@ const AgentCustomers: React.FC = () => {
                         <FiUser className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {customer.fullname}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{customer.fullname}</div>
                         <div className="text-sm text-gray-500">
                           ID: {customer._id.substring(0, 8)}...
                         </div>
@@ -154,18 +124,15 @@ const AgentCustomers: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">
-                        {customer.location}
-                      </span>
+                      <span className="text-sm text-gray-500">{customer.location}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(
-                        customer.status || "active"
-                      )}`}
-                    >
-                      {customer.status || "Active"}
+                        customer.status || 'active'
+                      )}`}>
+                      {customer.status || 'Active'}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -187,8 +154,7 @@ const AgentCustomers: React.FC = () => {
 const TableHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th
     scope="col"
-    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-  >
+    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
     {children}
   </th>
 );
@@ -200,7 +166,7 @@ const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const TableCell: React.FC<{
   children: React.ReactNode;
   className?: string;
-}> = ({ children, className = "" }) => (
+}> = ({ children, className = '' }) => (
   <td className={`px-6 py-4 whitespace-nowrap ${className}`}>{children}</td>
 );
 

@@ -1,105 +1,62 @@
-import React, { useEffect, useState } from "react";
-import { ICustomer } from "../interface/Icase";
-import api from "../../utils/api";
+import React from 'react';
+import { FiSearch, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import { useAdminCustomersStore } from '../../store/admin/useadminCustomerCase';
 import {
-  FiSearch,
-  FiEdit2,
-  FiTrash2,
-  FiUser,
-  FiMail,
-  FiPhone,
-  FiMapPin,
-} from "react-icons/fi";
+  useDeleteCustomer,
+  useFetchCustomers,
+  useUpdateCustomer,
+} from '../../hook/admin/useadminCustomers';
 
 const AdminCustomers: React.FC = () => {
-  const [customers, setCustomers] = useState<ICustomer[]>([]);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error" | "">("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [editingCustomer, setEditingCustomer] = useState<ICustomer | null>(
-    null
-  );
+  const {
+    customers,
+    loading,
+    // error,
+    message,
+    messageType,
+    searchTerm,
+    editingCustomer,
+    setSearchTerm,
+    setEditingCustomer,
+    // setMessage
+  } = useAdminCustomersStore();
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  // Fetch data
+  useFetchCustomers();
 
-  const fetchCustomers = async () => {
-    try {
-      const response = await api.get("customers");
-      setCustomers(response.data.customers);
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-      showMessage("Failed to load customers", "error");
-    }
-  };
-
-  const showMessage = (msg: string, type: "success" | "error") => {
-    setMessage(msg);
-    setMessageType(type);
-    setTimeout(() => {
-      setMessage("");
-      setMessageType("");
-    }, 5000);
-  };
-
-  const handleDeleteCustomer = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this customer?"))
-      return;
-
-    try {
-      await api.delete(`/customers/${id}`);
-      setCustomers(customers.filter((customer) => customer._id !== id));
-      showMessage("Customer deleted successfully", "success");
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      showMessage("Failed to delete customer", "error");
-    }
-  };
-
-  const handleUpdateCustomer = async () => {
-    if (!editingCustomer) return;
-
-    try {
-      const response = await api.put(
-        `/customers/${editingCustomer._id}`,
-        editingCustomer
-      );
-      setCustomers(
-        customers.map((c) =>
-          c._id === editingCustomer._id ? response.data.customer : c
-        )
-      );
-      setEditingCustomer(null);
-      showMessage("Customer updated successfully", "success");
-    } catch (error) {
-      console.error("Error updating customer:", error);
-      showMessage("Failed to update customer", "error");
-    }
-  };
+  // Mutations
+  const deleteCustomerMutation = useDeleteCustomer();
+  const updateCustomerMutation = useUpdateCustomer();
 
   const filteredCustomers = customers.filter(
-    (customer) =>
+    customer =>
       customer.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone.toString().includes(searchTerm)
   );
 
+  const handleDeleteCustomer = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this customer?')) return;
+    deleteCustomerMutation.mutate(id);
+  };
+
+  const handleUpdateCustomer = () => {
+    if (!editingCustomer) return;
+    updateCustomerMutation.mutate(editingCustomer);
+  };
+
   return (
     <div className="bg-white min-h-screen">
-      <h2 className="text-4xl px-20 py-10 font-semibold mb-4 text-black">
-        Manage Customers
-      </h2>
+      <h2 className="text-4xl px-20 py-10 font-semibold mb-4 text-black">Manage Customers</h2>
 
       {/* Message Display */}
       {message && (
         <div
           className={`mx-20 mb-4 p-4 rounded ${
-            messageType === "success"
-              ? "bg-green-100 border border-green-400 text-green-700"
-              : "bg-red-100 border border-red-400 text-red-700"
-          }`}
-        >
+            messageType === 'success'
+              ? 'bg-green-100 border border-green-400 text-green-700'
+              : 'bg-red-100 border border-red-400 text-red-700'
+          }`}>
           {message}
         </div>
       )}
@@ -116,7 +73,7 @@ const AdminCustomers: React.FC = () => {
                 type="text"
                 placeholder="Search customers..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
               />
             </div>
@@ -143,56 +100,41 @@ const AdminCustomers: React.FC = () => {
             <tbody>
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
-                    {searchTerm
-                      ? "No matching customers found"
-                      : "No customers found"}
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    {loading
+                      ? 'Loading customers...'
+                      : searchTerm
+                      ? 'No matching customers found'
+                      : 'No customers found'}
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((customer) => (
-                  <tr
-                    className="bg-white border-b hover:bg-gray-50"
-                    key={customer._id}
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {customer.fullname}
-                    </td>
-                    <td className="px-6 py-4 text-gray-900">
-                      {customer.email}
-                    </td>
-                    <td className="px-6 py-4 text-gray-900">
-                      {customer.phone}
-                    </td>
-                    <td className="px-6 py-4 text-gray-900">
-                      {customer.location}
-                    </td>
+                filteredCustomers.map(customer => (
+                  <tr className="bg-white border-b hover:bg-gray-50" key={customer._id}>
+                    <td className="px-6 py-4 font-medium text-gray-900">{customer.fullname}</td>
+                    <td className="px-6 py-4 text-gray-900">{customer.email}</td>
+                    <td className="px-6 py-4 text-gray-900">{customer.phone}</td>
+                    <td className="px-6 py-4 text-gray-900">{customer.location}</td>
                     <td className="px-6 py-4">
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          customer.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {customer.status || "active"}
+                          customer.status === 'active'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                        {customer.status || 'active'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => setEditingCustomer(customer)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors"
-                        >
+                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors">
                           <FiEdit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteCustomer(customer._id)}
-                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors"
-                        >
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors">
                           <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -216,18 +158,16 @@ const AdminCustomers: React.FC = () => {
               </h3>
               <button
                 onClick={() => setEditingCustomer(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
+                className="text-gray-400 hover:text-gray-600">
                 ✕
               </button>
             </div>
 
             <form
-              onSubmit={(e) => {
+              onSubmit={e => {
                 e.preventDefault();
                 handleUpdateCustomer();
-              }}
-            >
+              }}>
               <div className="space-y-4">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -236,7 +176,7 @@ const AdminCustomers: React.FC = () => {
                   <input
                     type="text"
                     value={editingCustomer.fullname}
-                    onChange={(e) =>
+                    onChange={e =>
                       setEditingCustomer({
                         ...editingCustomer,
                         fullname: e.target.value,
@@ -255,7 +195,7 @@ const AdminCustomers: React.FC = () => {
                   <input
                     type="email"
                     value={editingCustomer.email}
-                    onChange={(e) =>
+                    onChange={e =>
                       setEditingCustomer({
                         ...editingCustomer,
                         email: e.target.value,
@@ -274,10 +214,10 @@ const AdminCustomers: React.FC = () => {
                   <input
                     type="tel"
                     value={editingCustomer.phone}
-                    onChange={(e) =>
+                    onChange={e =>
                       setEditingCustomer({
                         ...editingCustomer,
-                        phone: parseInt(e.target.value),
+                        phone: parseInt(e.target.value) || 0,
                       })
                     }
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -292,8 +232,8 @@ const AdminCustomers: React.FC = () => {
                   </div>
                   <input
                     type="text"
-                    value={editingCustomer.location}
-                    onChange={(e) =>
+                    value={editingCustomer.location || ''}
+                    onChange={e =>
                       setEditingCustomer({
                         ...editingCustomer,
                         location: e.target.value,
@@ -307,9 +247,9 @@ const AdminCustomers: React.FC = () => {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition"
-                  >
-                    Update Customer
+                    disabled={updateCustomerMutation.isPending}
+                    className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition">
+                    {updateCustomerMutation.isPending ? 'Updating...' : 'Update Customer'}
                   </button>
                 </div>
               </div>

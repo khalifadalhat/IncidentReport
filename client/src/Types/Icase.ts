@@ -1,3 +1,6 @@
+import { LucideIcon } from 'lucide-react';
+import { IconType } from 'react-icons/lib';
+
 export interface ICase {
   _id: string;
   customerName: string;
@@ -8,6 +11,7 @@ export interface ICase {
   agent: string;
   assignedAgent: string;
   createdAt: string;
+  resolvedAt: string;
 }
 
 export interface ICustomer {
@@ -42,8 +46,36 @@ export interface IAgent {
   role: string;
 }
 
+export interface IMessage {
+  sender: string;
+  text: string;
+  caseId: string;
+  recipient: string;
+  timestamp?: Date;
+}
+
+export type UserRole = 'admin' | 'agent' | 'customer';
 export interface DecodedToken {
   userId: string;
-  role: string;
+  role: UserRole;
   exp: number;
+}
+
+type MenuIcon = LucideIcon | IconType;
+
+export interface MenuItem {
+  name: string;
+  href: string;
+  icon: MenuIcon;
+  badge?: number;
+  disabled?: boolean;
+  submenu?: Omit<MenuItem, 'submenu'>[];
+}
+
+export interface AdminMenuItem extends MenuItem {
+  adminOnly?: boolean;
+}
+
+export interface AgentMenuItem extends MenuItem {
+  requiresApproval?: boolean;
 }

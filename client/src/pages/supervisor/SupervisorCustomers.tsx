@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ICustomer } from '../interface/Icase';
+import { ICustomer } from '../../Types/Icase';
 
 const SupervisorCustomers: React.FC = () => {
-  const [customers, setCustomers] = useState<ICustomer[]>([])
+  const [customers, setCustomers] = useState<ICustomer[]>([]);
   useEffect(() => {
     axios.get('http://localhost:5000/customers').then(response => {
       setCustomers(response.data.customers);

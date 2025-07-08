@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IAgent } from '../interface/Icase';
+import { IAgent } from '../../Types/Icase';
 import api from '../../utils/api';
 
 const AdminAgents: React.FC = () => {

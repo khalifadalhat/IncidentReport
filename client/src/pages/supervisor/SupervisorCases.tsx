@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { IAdmin, IAgent } from '../interface/Icase';
+import { IAdmin, IAgent } from '../../Types/Icase';
 
 const SupervisorCases: React.FC = () => {
   const [cases, setCases] = useState<IAdmin[]>([]);
@@ -36,16 +36,21 @@ const SupervisorCases: React.FC = () => {
       alert('Please select an agent.');
       return;
     }
-  
+
     try {
-      await axios.put(`http://localhost:5000/cases/${caseId}/assign`, { caseId, agentId: selectedAgentId });
-     
-      setCases(prevCases => prevCases.map(singleCase => {
-        if (singleCase._id === caseId) {
-          return { ...singleCase, agent: selectedAgentId };
-        }
-        return singleCase;
-      }));
+      await axios.put(`http://localhost:5000/cases/${caseId}/assign`, {
+        caseId,
+        agentId: selectedAgentId,
+      });
+
+      setCases(prevCases =>
+        prevCases.map(singleCase => {
+          if (singleCase._id === caseId) {
+            return { ...singleCase, agent: selectedAgentId };
+          }
+          return singleCase;
+        })
+      );
       setSelectedAgent(null);
     } catch (error) {
       console.error('Error assigning agent:', error);
@@ -56,12 +61,14 @@ const SupervisorCases: React.FC = () => {
   const handleChangeStatus = async (caseId: string, status: string) => {
     try {
       await axios.put(`http://localhost:5000/cases/${caseId}/status`, { status });
-      setCases(prevCases => prevCases.map(singleCase => {
-        if (singleCase._id === caseId) {
-          return { ...singleCase, status };
-        }
-        return singleCase;
-      }));
+      setCases(prevCases =>
+        prevCases.map(singleCase => {
+          if (singleCase._id === caseId) {
+            return { ...singleCase, status };
+          }
+          return singleCase;
+        })
+      );
     } catch (error) {
       console.error('Error changing status:', error);
       alert('Failed to change status. Please try again.');
@@ -90,7 +97,9 @@ const SupervisorCases: React.FC = () => {
               <td className="border px-4 py-2">{singleCase.issue}</td>
               <td className="border px-4 py-2">{singleCase.department}</td>
               <td className="border px-4 py-2">
-                <select value={singleCase.status} onChange={(e) => handleChangeStatus(singleCase._id, e.target.value)}>
+                <select
+                  value={singleCase.status}
+                  onChange={e => handleChangeStatus(singleCase._id, e.target.value)}>
                   <option value="active">Active</option>
                   <option value="closed">Closed</option>
                   <option value="pending">Pending</option>
@@ -99,10 +108,14 @@ const SupervisorCases: React.FC = () => {
               <td className="border px-4 py-2">{singleCase.location}</td>
               <td className="border px-4 py-2">{singleCase.agent}</td>
               <td className="border px-4 py-2">
-                <select value={singleCase.agent || ''} onChange={(e) => handleAssignAgent(singleCase._id, e.target.value as string)}>
+                <select
+                  value={singleCase.agent || ''}
+                  onChange={e => handleAssignAgent(singleCase._id, e.target.value as string)}>
                   <option value="">Select Agent</option>
                   {agents.map(agent => (
-                    <option key={agent._id} value={agent._id}>{agent.fullname}</option>
+                    <option key={agent._id} value={agent._id}>
+                      {agent.fullname}
+                    </option>
                   ))}
                 </select>
               </td>

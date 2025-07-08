@@ -1,11 +1,11 @@
-import React from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { useNavigate } from "react-router-dom";
-import { FiUser, FiLock, FiEye, FiEyeOff, FiShield } from "react-icons/fi";
-import api from "../utils/api";
-import { setCookie } from "../utils/cookie";
+import React from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { useNavigate } from 'react-router-dom';
+import { FiUser, FiLock, FiEye, FiEyeOff, FiShield } from 'react-icons/fi';
+import api from '../utils/api';
+import { setCookie } from '../utils/cookie';
 
 interface LoginData {
   username: string;
@@ -13,17 +13,14 @@ interface LoginData {
 }
 
 const schema = yup.object().shape({
-  username: yup
-    .string()
-    .email("Must be a valid email")
-    .required("Email is required"),
+  username: yup.string().email('Must be a valid email').required('Email is required'),
   password: yup
     .string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters")
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
     .matches(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-      "Must contain uppercase, number, and special character"
+      'Must contain uppercase, number, and special character'
     ),
 });
 
@@ -41,28 +38,28 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [securityLevel, setSecurityLevel] = React.useState<number>(0);
 
-  const onSubmit: SubmitHandler<LoginData> = async (data) => {
+  const onSubmit: SubmitHandler<LoginData> = async data => {
     try {
       setError(null);
 
-      const response = await api.post("/auth/login", {
+      const response = await api.post('/auth/login', {
         email: data.username,
         password: data.password,
       });
 
-      setCookie("token", response.data.token);
-      setCookie("userData", JSON.stringify(response.data.user));
+      setCookie('token', response.data.token);
+      setCookie('userData', JSON.stringify(response.data.user));
 
-      if (response.data.user.role === "admin") {
-        navigate("/admin/dashboard", { replace: true });
-      } else if (response.data.user.role === "agent") {
-        navigate("/agent/dashboard", { replace: true });
+      if (response.data.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else if (response.data.user.role === 'agent') {
+        navigate('/agent', { replace: true });
       } else {
-        setError("Unknown user role.");
+        setError('Unknown user role.');
       }
     } catch (err) {
-      console.error("Login error:", err);
-      setError("Invalid credentials or insufficient privileges");
+      console.error('Login error:', err);
+      setError('Invalid credentials or insufficient privileges');
     }
   };
 
@@ -88,9 +85,7 @@ const Login: React.FC = () => {
             <FiShield className="text-3xl mr-2" />
             <h1 className="text-2xl font-bold">Admin Portal</h1>
           </div>
-          <p className="text-indigo-100 text-sm">
-            Restricted access to authorized personnel only
-          </p>
+          <p className="text-indigo-100 text-sm">Restricted access to authorized personnel only</p>
         </div>
 
         <div className="p-8">
@@ -99,25 +94,18 @@ const Login: React.FC = () => {
             <div className="mb-6">
               <div className="flex justify-between text-xs text-gray-500 mb-1">
                 <span>Password Strength</span>
-                <span>
-                  {securityLevel < 2
-                    ? "Weak"
-                    : securityLevel < 4
-                    ? "Good"
-                    : "Strong"}
-                </span>
+                <span>{securityLevel < 2 ? 'Weak' : securityLevel < 4 ? 'Good' : 'Strong'}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-1.5">
                 <div
                   className={`h-1.5 rounded-full ${
                     securityLevel < 2
-                      ? "bg-red-500"
+                      ? 'bg-red-500'
                       : securityLevel < 4
-                      ? "bg-yellow-500"
-                      : "bg-green-500"
+                      ? 'bg-yellow-500'
+                      : 'bg-green-500'
                   }`}
-                  style={{ width: `${securityLevel * 25}%` }}
-                ></div>
+                  style={{ width: `${securityLevel * 25}%` }}></div>
               </div>
             </div>
           )}
@@ -138,17 +126,15 @@ const Login: React.FC = () => {
               <input
                 type="text"
                 id="username"
-                {...register("username")}
+                {...register('username')}
                 placeholder="Admin username"
                 className={`w-full pl-10 pr-4 py-3 border ${
-                  errors.username ? "border-red-500" : "border-gray-300"
+                  errors.username ? 'border-red-500' : 'border-gray-300'
                 } rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition`}
                 disabled={isSubmitting}
               />
               {errors.username && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.username.message}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
               )}
             </div>
 
@@ -158,14 +144,14 @@ const Login: React.FC = () => {
                 <FiLock className="text-gray-400" />
               </div>
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 id="password"
-                {...register("password", {
+                {...register('password', {
                   onChange: handlePasswordChange,
                 })}
                 placeholder="••••••••"
                 className={`w-full pl-10 pr-10 py-3 border ${
-                  errors.password ? "border-red-500" : "border-gray-300"
+                  errors.password ? 'border-red-500' : 'border-gray-300'
                 } rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition`}
                 disabled={isSubmitting}
               />
@@ -173,8 +159,7 @@ const Login: React.FC = () => {
                 type="button"
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={isSubmitting}
-              >
+                disabled={isSubmitting}>
                 {showPassword ? (
                   <FiEyeOff className="text-gray-400 hover:text-gray-600" />
                 ) : (
@@ -182,9 +167,7 @@ const Login: React.FC = () => {
                 )}
               </button>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.password.message}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
 
@@ -194,36 +177,32 @@ const Login: React.FC = () => {
               disabled={isSubmitting}
               className={`w-full py-3 px-4 rounded-lg font-medium text-white transition ${
                 isSubmitting
-                  ? "bg-gray-500 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              }`}
-            >
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
+              }`}>
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
                       cx="12"
                       cy="12"
                       r="10"
                       stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
+                      strokeWidth="4"></circle>
                     <path
                       className="opacity-75"
                       fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Authenticating...
                 </span>
               ) : (
-                "Login"
+                'Login'
               )}
             </button>
 

@@ -1,170 +1,292 @@
-import React, { useState, useEffect } from "react";
-import io from "socket.io-client";
-import axios from "axios";
-import { ICase } from "../interface/Icase";
-import api from "../../utils/api";
-
-const socket = io(api.defaults.baseURL ?? "", {
-  withCredentials: true,
-  extraHeaders: {
-    "my-custom-header": "abcd",
-  },
-});
+import React, { useEffect, useRef, useState } from 'react';
+import { FiSend, FiPaperclip, FiSmile, FiMessageSquare, FiChevronDown } from 'react-icons/fi';
+import { ICase, IMessage } from '../../Types/Icase';
+import { useSocket } from '../../context/SocketContext';
+import { format } from 'date-fns';
+import { useChatStore } from '../../store/chat/useChatStore';
+import { useChatCases } from '../../hook/chat/useChat';
+import EmojiPicker from '../../ui/EmojiPicker';
 
 const AgentChat: React.FC = () => {
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>(
-    []
-  );
-  const [message, setMessage] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("");
-  const [cases, setCases] = useState<ICase[]>([]);
+  const {
+    messages,
+    activeCase,
+    cases,
+    loading,
+    error,
+    setMessages,
+    addMessage,
+    setActiveCase,
+    // setLoading,
+    setError,
+  } = useChatStore();
 
+  const { refetch } = useChatCases();
+  const { socket, isConnected } = useSocket();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [message, setMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isCasesDropdownOpen, setIsCasesDropdownOpen] = useState(false);
+
+  // Initialize socket listeners
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get(`${api}/cases`);
-        setCases(response.data);
-      } catch (error) {
-        console.error("Error fetching cases:", error);
-      }
+    if (!socket || !isConnected) return;
+
+    const handleInitialMessages = (initialMessages: IMessage[]) => {
+      setMessages(
+        initialMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp || Date.now()),
+        }))
+      );
     };
 
-    fetchData();
+    const handleNewMessage = (newMessage: IMessage) => {
+      addMessage({
+        ...newMessage,
+        timestamp: new Date(newMessage.timestamp || Date.now()),
+      });
+    };
 
-    socket.on("initialMessages", (initialMessages) => {
-      setMessages(initialMessages);
-    });
-
-    socket.on("receiveMessage", (message: { sender: string; text: string }) => {
-      setMessages((prevMessages) => [...prevMessages, message]);
+    socket.on('initialMessages', handleInitialMessages);
+    socket.on('receiveMessage', handleNewMessage);
+    socket.on('error', (error: string) => {
+      setError(error);
     });
 
     return () => {
-      socket.off("initialMessages");
-      socket.off("receiveMessage");
+      socket.off('initialMessages', handleInitialMessages);
+      socket.off('receiveMessage', handleNewMessage);
+      socket.off('error');
     };
-  }, []);
+  }, [socket, isConnected, setMessages, addMessage, setError]);
 
-  const sendMessage = () => {
-    if (!selectedCustomer) {
-      alert("Please select a customer to chat with.");
-      return;
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // Join case room when active case changes
+  useEffect(() => {
+    if (activeCase && socket && isConnected) {
+      socket.emit('joinCase', activeCase._id);
     }
+  }, [activeCase, socket, isConnected]);
 
-    const newMessage = {
-      sender: "agent",
-      text: message,
-      recipient: selectedCustomer,
-    };
-    socket.emit("sendMessage", newMessage);
-    setMessage("");
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  return (
-    <div className="bg-white">
-      <h2 className="text-4xl px-20 py-10 font-semi-bold mb-4 text-black">
-        Chat
-      </h2>
-      <hr className="h-px my-8 bg-black border-0 dark:bg-gray-700" />
-      <div
-        className="bg-gray-200 p-4 mb-4 rounded"
-        style={{ height: "300px", overflowY: "scroll" }}
-      >
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`mb-2 ${
-              msg.sender === "agent" ? "text-right" : "text-left"
-            }`}
-          >
-            <div
-              className={`inline-block p-2 rounded ${
-                msg.sender === "agent"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 text-black"
-              }`}
-            >
-              {msg.text}
-            </div>
-          </div>
-        ))}
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!activeCase || !message.trim() || !socket || !isConnected) return;
+
+    const newMessage: IMessage = {
+      sender: 'agent',
+      text: message,
+      recipient: activeCase.customerName,
+      caseId: activeCase._id,
+      timestamp: new Date(),
+    };
+
+    socket?.emit('sendMessage', newMessage);
+    setMessage('');
+    setShowEmojiPicker(false);
+  };
+
+  const handleSelectCase = (caseItem: ICase) => {
+    setActiveCase(caseItem);
+    setIsCasesDropdownOpen(false);
+    setError(null);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
+  };
+
+  const formatTime = (date: Date) => {
+    return format(date, 'h:mm a');
+  };
+
+  const formatMessageDate = (date: Date) => {
+    return format(date, 'MMMM d, yyyy');
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
-      <div className="flex mb-2 text-black">
-        <select
-          value={selectedCustomer}
-          onChange={(e) => setSelectedCustomer(e.target.value)}
-          className="border p-2 flex-1 rounded mr-2"
-        >
-          <option value="">Select Customer</option>
-          {cases.map((caseItem, index) => (
-            <option key={index} value={caseItem.customerName}>
-              {caseItem.customerName}
-            </option>
-          ))}
-        </select>
-      </div>
-      <form>
-        <label htmlFor="chat" className="sr-only">
-          Your message
-        </label>
-        <div className="flex items-center py-2 px-3 bg-gray-50 rounded-lg dark:bg-gray-700">
+    );
+  }
+
+  if (error && !activeCase) {
+    return (
+      <div className="bg-white rounded-lg shadow p-6 h-full flex flex-col justify-center">
+        <div className="text-center py-8">
+          <FiMessageSquare className="mx-auto h-12 w-12 text-blue-500" />
+          <h3 className="mt-2 text-lg font-medium text-gray-900">Chat System</h3>
+          <p className="mt-1 text-sm text-gray-500">{error}</p>
           <button
-            type="button"
-            className="inline-flex justify-center p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="p-2 text-gray-500 rounded-lg cursor-pointer hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-.464 5.535a1 1 0 10-1.415-1.414 3 3 0 01-4.242 0 1 1 0 00-1.415 1.414 5 5 0 007.072 0z"
-                clipRule="evenodd"
-              ></path>
-            </svg>
-          </button>
-          <input
-            id="chat"
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="block mx-4 p-2.5 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            placeholder="Your message..."
-          />
-          <button
-            onClick={sendMessage}
-            className="inline-flex justify-center p-2 text-blue-600 rounded-full cursor-pointer hover:bg-blue-100 dark:text-blue-500 dark:hover:bg-gray-600"
-          >
-            <svg
-              className="w-6 h-6 rotate-90"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
-            </svg>
+            onClick={() => refetch()}
+            className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+            Retry
           </button>
         </div>
-      </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg h-full flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-500">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-white">Customer Chat</h2>
+          <div className="relative">
+            <button
+              onClick={() => setIsCasesDropdownOpen(!isCasesDropdownOpen)}
+              className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors">
+              <span>{activeCase ? activeCase.customerName : 'Select Case'}</span>
+              <FiChevronDown
+                className={`transition-transform ${isCasesDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isCasesDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-10 max-h-96 overflow-y-auto">
+                {cases.map(caseItem => (
+                  <button
+                    key={caseItem._id}
+                    onClick={() => handleSelectCase(caseItem)}
+                    className={`block w-full text-left px-4 py-2 hover:bg-blue-50 ${
+                      activeCase?._id === caseItem._id ? 'bg-blue-100' : ''
+                    }`}>
+                    <div className="font-medium text-gray-900">{caseItem.customerName}</div>
+                    <div className="text-sm text-gray-500 truncate">
+                      {caseItem.issue.substring(0, 40)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {activeCase && (
+          <div className="mt-2 text-sm text-blue-100">
+            Case: {activeCase.issue.substring(0, 50)}...
+          </div>
+        )}
+      </div>
+
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto bg-gray-50 p-4">
+        {!activeCase ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <FiMessageSquare className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No case selected</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Please select a case from the dropdown to start chatting
+            </p>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <FiMessageSquare className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900">No messages yet</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Start the conversation with {activeCase.customerName}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((msg, index) => {
+              // Group messages by date
+              const showDateHeader =
+                index === 0 ||
+                formatMessageDate(new Date(messages[index - 1].timestamp || 0)) !==
+                  formatMessageDate(new Date(msg.timestamp || 0));
+
+              return (
+                <React.Fragment key={index}>
+                  {showDateHeader && (
+                    <div className="flex justify-center">
+                      <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+                        {formatMessageDate(new Date(msg.timestamp || 0))}
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-xs md:max-w-md lg:max-w-lg rounded-2xl px-4 py-2 ${
+                        msg.sender === 'agent'
+                          ? 'bg-blue-600 text-white rounded-br-none'
+                          : 'bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-200'
+                      }`}>
+                      {msg.sender !== 'agent' && (
+                        <div className="font-medium text-sm text-blue-600">
+                          {activeCase.customerName}
+                        </div>
+                      )}
+                      <div className="text-sm">{msg.text}</div>
+                      <div
+                        className={`text-xs mt-1 text-right ${
+                          msg.sender === 'agent' ? 'text-blue-100' : 'text-gray-500'
+                        }`}>
+                        {formatTime(new Date(msg.timestamp || 0))}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Message input */}
+      {activeCase && (
+        <div className="p-4 border-t bg-white">
+          <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
+            <div className="relative flex-1">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  className="w-full p-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Type your message..."
+                  onKeyPress={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage(e)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="absolute right-10 top-3 text-gray-500 hover:text-blue-600">
+                  <FiSmile className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 text-gray-500 hover:text-blue-600">
+                  <FiPaperclip className="h-5 w-5" />
+                </button>
+              </div>
+              {showEmojiPicker && (
+                <div className="absolute bottom-14 right-0 z-10">
+                  <EmojiPicker onSelect={handleEmojiSelect} />
+                </div>
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={!message.trim()}
+              className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              <FiSend className="h-5 w-5" />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,41 +1,41 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { IAgent } from "../interface/Icase";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { IAgent } from '../../Types/Icase';
 
 const SupervisorAgents: React.FC = () => {
   const [agents, setAgents] = useState<IAgent[]>([]);
   const [newAgent, setNewAgent] = useState({
-    fullname: "",
-    email: "",
-    department: "Funding Wallet",
-    role: "agent",
+    fullname: '',
+    email: '',
+    department: 'Funding Wallet',
+    role: 'agent',
   });
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/agents")
-      .then((response) => {
+      .get('http://localhost:5000/agents')
+      .then(response => {
         setAgents(response.data.agents);
       })
-      .catch((error) => {
-        console.error("There was an error fetching the agents!", error);
+      .catch(error => {
+        console.error('There was an error fetching the agents!', error);
       });
   }, []);
 
   const handleCreateAgent = async () => {
     await axios
-      .post("http://localhost:5000/agents", newAgent)
-      .then((response) => {
+      .post('http://localhost:5000/agents', newAgent)
+      .then(response => {
         setAgents([...agents, response.data.agent]);
         setNewAgent({
-          fullname: "",
-          email: "",
-          department: "Funding Wallet",
-          role: "agent",
+          fullname: '',
+          email: '',
+          department: 'Funding Wallet',
+          role: 'agent',
         });
       })
-      .catch((error) => {
-        console.error("There was an error creating the agent!", error);
+      .catch(error => {
+        console.error('There was an error creating the agent!', error);
       });
   };
 
@@ -43,10 +43,10 @@ const SupervisorAgents: React.FC = () => {
     await axios
       .delete(`http://localhost:5000/agents/${id}`)
       .then(() => {
-        setAgents(agents.filter((agent) => agent._id !== id));
+        setAgents(agents.filter(agent => agent._id !== id));
       })
-      .catch((error) => {
-        console.error("There was an error deleting the agent!", error);
+      .catch(error => {
+        console.error('There was an error deleting the agent!', error);
       });
   };
 
@@ -58,25 +58,20 @@ const SupervisorAgents: React.FC = () => {
           type="text"
           placeholder="Full Name"
           value={newAgent.fullname}
-          onChange={(e) =>
-            setNewAgent({ ...newAgent, fullname: e.target.value })
-          }
+          onChange={e => setNewAgent({ ...newAgent, fullname: e.target.value })}
           className="border p-2 mr-2 rounded"
         />
         <input
           type="email"
           placeholder="Email"
           value={newAgent.email}
-          onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+          onChange={e => setNewAgent({ ...newAgent, email: e.target.value })}
           className="border p-2 mr-2 rounded"
         />
         <select
           value={newAgent.department}
-          onChange={(e) =>
-            setNewAgent({ ...newAgent, department: e.target.value })
-          }
-          className="border p-2 mr-2 rounded"
-        >
+          onChange={e => setNewAgent({ ...newAgent, department: e.target.value })}
+          className="border p-2 mr-2 rounded">
           <option value="Funding Wallet">Funding Wallet</option>
           <option value="Buying Airtime">Buying Airtime</option>
           <option value="Buying Internet Data">Buying Internet Data</option>
@@ -86,16 +81,12 @@ const SupervisorAgents: React.FC = () => {
         </select>
         <select
           value={newAgent.role}
-          onChange={(e) => setNewAgent({ ...newAgent, role: e.target.value })}
-          className="border p-2 mr-2 rounded"
-        >
+          onChange={e => setNewAgent({ ...newAgent, role: e.target.value })}
+          className="border p-2 mr-2 rounded">
           <option value="agent">Agent</option>
           <option value="supervisor">Supervisor</option>
         </select>
-        <button
-          onClick={handleCreateAgent}
-          className="bg-blue-500 text-white p-2 rounded"
-        >
+        <button onClick={handleCreateAgent} className="bg-blue-500 text-white p-2 rounded">
           Add Agent
         </button>
       </div>
@@ -110,7 +101,7 @@ const SupervisorAgents: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {agents.map((agent) => (
+          {agents.map(agent => (
             <tr key={agent._id}>
               <td className="border px-4 py-2">{agent.fullname}</td>
               <td className="border px-4 py-2">{agent.email}</td>
@@ -119,8 +110,7 @@ const SupervisorAgents: React.FC = () => {
               <td className="border px-4 py-2">
                 <button
                   onClick={() => handleDeleteAgent(agent._id)}
-                  className="bg-red-500 text-white p-2 rounded"
-                >
+                  className="bg-red-500 text-white p-2 rounded">
                   Delete
                 </button>
               </td>

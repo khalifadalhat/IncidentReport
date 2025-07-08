@@ -1,64 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../utils/api';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiChevronRight } from 'react-icons/fi';
 import { motion } from 'framer-motion';
+import { useCustomerStore } from '../../store/customer/useCustomerStore';
+import { useFetchCustomerProfile } from '../../hook/customer/useCustomerProfile';
 
 const CustomerDetails: React.FC = () => {
-  const [customer, setCustomer] = useState({
-    fullname: '',
-    email: '',
-    phone: '',
-    location: '',
-  });
   const navigate = useNavigate();
+  const { customer, setCustomer } = useCustomerStore();
 
-  useEffect(() => {
-    const fetchCustomerData = async () => {
-      try {
-        const savedCustomer = localStorage.getItem('customer');
-        if (savedCustomer) {
-          const parsedCustomer = JSON.parse(savedCustomer);
-          setCustomer(parsedCustomer.customer);
-          return;
-        }
-
-        // Fallback to API if not in localStorage
-        const response = await api.get('/customers/profile');
-        const customerData = response.data;
-        setCustomer(customerData);
-        localStorage.setItem('customer', JSON.stringify(customerData));
-      } catch (error) {
-        console.error('Error fetching customer data:', error);
-      }
-    };
-
-    fetchCustomerData();
-  }, []);
+  useFetchCustomerProfile();
 
   const handleContinue = () => {
-    navigate('/customer/departments', {
-      state: { customer },
-    });
+    navigate('/customer/department');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden"
-      >
+        className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-10">
             <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <FiUser className="text-blue-600 text-4xl" />
             </div>
             <h1 className="text-3xl font-bold text-gray-800">Your Profile</h1>
-            <p className="text-gray-600 mt-2">
-              Please review and confirm your information
-            </p>
+            <p className="text-gray-600 mt-2">Please review and confirm your information</p>
           </div>
 
           <div className="space-y-6">
@@ -75,7 +45,7 @@ const CustomerDetails: React.FC = () => {
                     <input
                       className="w-full bg-transparent border-b border-blue-200 pb-1 focus:outline-none focus:border-blue-500 text-gray-800"
                       value={customer.fullname}
-                      onChange={e => setCustomer({...customer, fullname: e.target.value})}
+                      onChange={e => setCustomer({ fullname: e.target.value })}
                     />
                   </div>
                 </div>
@@ -85,13 +55,11 @@ const CustomerDetails: React.FC = () => {
                     <FiMail className="text-blue-600" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Email
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
                     <input
                       className="w-full bg-transparent border-b border-blue-200 pb-1 focus:outline-none focus:border-blue-500 text-gray-800"
                       value={customer.email}
-                      onChange={e => setCustomer({...customer, email: e.target.value})}
+                      onChange={e => setCustomer({ email: e.target.value })}
                     />
                   </div>
                 </div>
@@ -101,13 +69,11 @@ const CustomerDetails: React.FC = () => {
                     <FiPhone className="text-blue-600" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Phone
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Phone</label>
                     <input
                       className="w-full bg-transparent border-b border-blue-200 pb-1 focus:outline-none focus:border-blue-500 text-gray-800"
                       value={customer.phone}
-                      onChange={e => setCustomer({...customer, phone: e.target.value})}
+                      onChange={e => setCustomer({ phone: e.target.value })}
                     />
                   </div>
                 </div>
@@ -117,13 +83,11 @@ const CustomerDetails: React.FC = () => {
                     <FiMapPin className="text-blue-600" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500 mb-1">
-                      Location
-                    </label>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Location</label>
                     <input
                       className="w-full bg-transparent border-b border-blue-200 pb-1 focus:outline-none focus:border-blue-500 text-gray-800"
                       value={customer.location}
-                      onChange={e => setCustomer({...customer, location: e.target.value})}
+                      onChange={e => setCustomer({ location: e.target.value })}
                     />
                   </div>
                 </div>
@@ -133,8 +97,7 @@ const CustomerDetails: React.FC = () => {
             <div className="flex justify-end">
               <button
                 onClick={handleContinue}
-                className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-all duration-300"
-              >
+                className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-all duration-300">
                 Continue
                 <FiChevronRight className="ml-2" />
               </button>

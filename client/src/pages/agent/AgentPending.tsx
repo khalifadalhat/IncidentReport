@@ -1,78 +1,49 @@
-import React, { useEffect, useState } from "react";
-import { ICase } from "../interface/Icase";
-import {
-  FiCheck,
-  FiX,
-  FiRefreshCw,
-  FiAlertCircle,
-  FiMapPin,
-  FiUser,
-} from "react-icons/fi";
-import { FaUserTie } from "react-icons/fa";
-import api from "../../utils/api";
+import React from 'react';
+import { FiCheck, FiX, FiRefreshCw, FiAlertCircle, FiMapPin, FiUser } from 'react-icons/fi';
+import { FaUserTie } from 'react-icons/fa';
+import { usePendingCasesStore } from '../../store/agent/usePendingCasesSore';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../utils/api';
+import { usePendingCases } from '../../hook/agent/usePendingCases';
 
 const AgentPending: React.FC = () => {
-  const [cases, setCases] = useState<ICase[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { pendingCases, loading, error } = usePendingCasesStore();
+  const { refetch } = usePendingCases();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetchCases();
-  }, []);
+  const acceptCaseMutation = useMutation({
+    mutationFn: (caseId: string) => api.put(`/cases/${caseId}/accept`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
+    },
+    onError: error => {
+      console.error('Error accepting case:', error);
+    },
+  });
 
-  const fetchCases = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get("/cases");
-      const casesWithAgents = await Promise.all(
-        response.data.cases.map(async (singleCase: ICase) => {
-          if (singleCase.assignedAgent) {
-            const agentResponse = await api.get(`/${singleCase.assignedAgent}`);
-            return { ...singleCase, agent: agentResponse.data.agent.fullname };
-          } else {
-            return { ...singleCase, agent: "Not Assigned" };
-          }
-        })
-      );
+  const rejectCaseMutation = useMutation({
+    mutationFn: (caseId: string) => api.put(`/cases/${caseId}/reject`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
+    },
+    onError: error => {
+      console.error('Error accepting case:', error);
+    },
+  });
 
-      const pendingCases = casesWithAgents.filter(
-        (singleCase) => singleCase.status === "pending"
-      );
-      setCases(pendingCases);
-    } catch (error) {
-      console.error("Error fetching cases:", error);
-      setError("Failed to load cases. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+  const acceptCase = (caseId: string) => {
+    acceptCaseMutation.mutate(caseId);
   };
 
-  const acceptCase = async (caseId: string) => {
-    try {
-      await api.put(`/cases/${caseId}/accept`);
-      fetchCases();
-    } catch (error) {
-      console.error("Error accepting case:", error);
-      setError("Failed to accept case. Please try again.");
-    }
-  };
-
-  const rejectCase = async (caseId: string) => {
-    try {
-      await api.put(`/cases/${caseId}/reject`);
-      fetchCases();
-    } catch (error) {
-      console.error("Error rejecting case:", error);
-      setError("Failed to reject case. Please try again.");
-    }
+  const rejectCase = (caseId: string) => {
+    rejectCaseMutation.mutate(caseId);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
@@ -92,9 +63,8 @@ const AgentPending: React.FC = () => {
           <h3 className="mt-2 text-lg font-medium text-gray-900">{error}</h3>
           <div className="mt-6">
             <button
-              onClick={fetchCases}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-            >
+              onClick={() => refetch()}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
               <FiRefreshCw className="mr-2" /> Retry
             </button>
           </div>
@@ -108,26 +78,21 @@ const AgentPending: React.FC = () => {
       <div className="px-6 py-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="mb-4 sm:mb-0">
           <h2 className="text-xl font-semibold text-gray-900">Pending Cases</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Review and manage cases awaiting your action
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Review and manage cases awaiting your action</p>
         </div>
         <div className="flex items-center space-x-2">
           <button
-            onClick={fetchCases}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-          >
+            onClick={() => refetch()}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             <FiRefreshCw className="mr-2" /> Refresh
           </button>
         </div>
       </div>
 
-      {cases.length === 0 ? (
+      {pendingCases.length === 0 ? (
         <div className="text-center py-12">
           <FiCheck className="mx-auto h-12 w-12 text-green-500" />
-          <h3 className="mt-2 text-lg font-medium text-gray-900">
-            No pending cases
-          </h3>
+          <h3 className="mt-2 text-lg font-medium text-gray-900">No pending cases</h3>
           <p className="mt-1 text-sm text-gray-500">
             All cases have been processed. Check back later for new cases.
           </p>
@@ -147,7 +112,7 @@ const AgentPending: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {cases.map((singleCase) => (
+              {pendingCases.map(singleCase => (
                 <TableRow key={singleCase._id}>
                   <TableCell>
                     <div className="flex items-center">
@@ -174,45 +139,47 @@ const AgentPending: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">
-                        {singleCase.location}
-                      </span>
+                      <span className="text-sm text-gray-500">{singleCase.location}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center">
-                      {singleCase.agent === "Not Assigned" ? (
-                        <span className="text-sm text-gray-500">
-                          Not Assigned
-                        </span>
+                      {singleCase.agent === 'Not Assigned' ? (
+                        <span className="text-sm text-gray-500">Not Assigned</span>
                       ) : (
                         <>
                           <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">
-                            {singleCase.agent}
-                          </span>
+                          <span className="text-sm text-gray-500">{singleCase.agent}</span>
                         </>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-gray-500">
-                      {formatDate(singleCase.createdAt)}
-                    </div>
+                    <div className="text-sm text-gray-500">{formatDate(singleCase.createdAt)}</div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <button
                         onClick={() => acceptCase(singleCase._id)}
                         className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                      >
-                        <FiCheck className="mr-1" /> Accept
+                        disabled={acceptCaseMutation.isPending}>
+                        {acceptCaseMutation.isPending ? (
+                          <FiRefreshCw className="mr-1 animate-spin" />
+                        ) : (
+                          <FiCheck className="mr-1" />
+                        )}
+                        Accept
                       </button>
                       <button
                         onClick={() => rejectCase(singleCase._id)}
                         className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                      >
-                        <FiX className="mr-1" /> Reject
+                        disabled={rejectCaseMutation.isPending}>
+                        {rejectCaseMutation.isPending ? (
+                          <FiRefreshCw className="mr-1 animate-spin" />
+                        ) : (
+                          <FiX className="mr-1" />
+                        )}
+                        Reject
                       </button>
                     </div>
                   </TableCell>
@@ -230,8 +197,7 @@ const AgentPending: React.FC = () => {
 const TableHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th
     scope="col"
-    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-  >
+    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
     {children}
   </th>
 );
@@ -243,7 +209,7 @@ const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const TableCell: React.FC<{
   children: React.ReactNode;
   className?: string;
-}> = ({ children, className = "" }) => (
+}> = ({ children, className = '' }) => (
   <td className={`px-6 py-4 whitespace-nowrap ${className}`}>{children}</td>
 );
 
