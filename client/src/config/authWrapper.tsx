@@ -10,6 +10,7 @@ interface AuthWrapperProps {
     menuItems: MenuItem[];
     title: string;
     subtitle: string;
+    children?: React.ReactNode;
   }>;
   menuItems?: MenuItem[];
   title?: string;
