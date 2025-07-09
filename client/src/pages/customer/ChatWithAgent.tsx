@@ -31,7 +31,7 @@ interface CaseDetails {
 }
 
 const ChatWithAgent: React.FC = () => {
-  const { caseId, customer } = useCustomerStore();
+  const { caseId } = useCustomerStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [socket, setSocket] = useState<Socket | null>(null);
