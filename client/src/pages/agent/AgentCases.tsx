@@ -4,6 +4,7 @@ import StatCard from '../../components/NewStat';
 import { useOutletContext } from 'react-router-dom';
 import { useAgentCasesStore } from '../../store/agent/useAgentCasesStore';
 import { useFetchAgentCases } from '../../hook/agent/useAgentCases';
+import { FaUserTie } from 'react-icons/fa';
 
 const AgentCases: React.FC = () => {
   const context = useOutletContext<{ agentId: string }>();
@@ -160,7 +161,20 @@ const AgentCases: React.FC = () => {
                 <TableRow key={singleCase._id}>
                   <TableCell>{singleCase.customerName}</TableCell>
                   <TableCell className="max-w-xs truncate">{singleCase.issue}</TableCell>
-                  <TableCell>{singleCase.agent}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      {!singleCase.assignedAgent ? (
+                        <span className="text-sm text-gray-500">Not Assigned</span>
+                      ) : (
+                        <>
+                          <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            {singleCase.assignedAgent?.fullname}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{formatDate(singleCase.createdAt)}</TableCell>
                   <TableCell>
                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
