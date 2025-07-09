@@ -14,6 +14,7 @@ import {
   FiCheckCircle,
   FiSettings,
 } from 'react-icons/fi';
+import { FaRegCirclePlay } from 'react-icons/fa6';
 import { MenuItem } from '../Types/Icase';
 
 export const adminMenuItems: MenuItem[] = [
@@ -27,6 +28,7 @@ export const adminMenuItems: MenuItem[] = [
 
 export const agentMenuItems: MenuItem[] = [
   { name: 'Dashboard', href: '/agent', icon: FiHome },
+  { name: 'Active', href: '/agent/active', icon: FaRegCirclePlay },
   { name: 'Pending', href: '/agent/pending', icon: FiClock },
   { name: 'Customers', href: '/agent/customers', icon: FiUsers },
   { name: 'Chat', href: '/agent/chat', icon: FiMessageSquare },
