@@ -1,6 +1,15 @@
 import { LucideIcon } from 'lucide-react';
 import { IconType } from 'react-icons/lib';
 
+export interface AssignedAgent {
+  _id: string;
+  fullname: string;
+  email: string;
+  status: string;
+  department: string;
+  role: string;
+}
+
 export interface ICase {
   _id: string;
   customerName: string;
@@ -9,9 +18,10 @@ export interface ICase {
   status: string;
   location: string;
   agent: string;
-  assignedAgent: string;
+  assignedAgent: AssignedAgent;
   createdAt: string;
   resolvedAt: string;
+  closedAt: string;
 }
 
 export interface ICustomer {

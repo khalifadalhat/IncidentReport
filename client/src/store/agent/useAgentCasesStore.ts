@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { ICase } from '../../Types/Icase';
 
 interface AgentCasesState {
+  activeCases: ICase[];
   pendingCases: ICase[];
   closedCases: ICase[];
   stats: {
@@ -12,6 +13,7 @@ interface AgentCasesState {
   };
   loading: boolean;
   error: string | null;
+  setActiveCases: (cases: ICase[]) => void;
   setPendingCases: (cases: ICase[]) => void;
   setClosedCases: (cases: ICase[]) => void;
   setStats: (stats: {
@@ -25,6 +27,7 @@ interface AgentCasesState {
 }
 
 export const useAgentCasesStore = create<AgentCasesState>(set => ({
+  activeCases: [],
   pendingCases: [],
   closedCases: [],
   stats: {
@@ -35,6 +38,7 @@ export const useAgentCasesStore = create<AgentCasesState>(set => ({
   },
   loading: false,
   error: null,
+  setActiveCases: activeCases => set({ activeCases }),
   setPendingCases: pendingCases => set({ pendingCases }),
   setClosedCases: closedCases => set({ closedCases }),
   setStats: stats => set({ stats }),
