@@ -1,4 +1,5 @@
 import React from 'react';
+import Cookie from 'js-cookie';
 import { FiCheck, FiX, FiRefreshCw, FiAlertCircle, FiMapPin, FiUser } from 'react-icons/fi';
 import { FaUserTie } from 'react-icons/fa';
 import { usePendingCasesStore } from '../../store/agent/usePendingCasesSore';
@@ -11,8 +12,12 @@ const AgentPending: React.FC = () => {
   const { refetch } = usePendingCases();
   const queryClient = useQueryClient();
 
+  const userData = Cookie.get('userData');
+  const agent = userData ? JSON.parse(userData) : null;
+
   const acceptCaseMutation = useMutation({
-    mutationFn: (caseId: string) => api.put(`/cases/accept/${caseId}`),
+    mutationFn: (caseId: string) =>
+      api.put(`/cases/accept/${caseId}`, { status: 'accepted', agentId: agent?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
     },
@@ -22,7 +27,10 @@ const AgentPending: React.FC = () => {
   });
 
   const rejectCaseMutation = useMutation({
-    mutationFn: (caseId: string) => api.put(`/cases/reject/${caseId}`),
+    mutationFn: (caseId: string) =>
+      api.put(`/cases/reject/${caseId}`, {
+        status: 'rejected',
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
     },
@@ -144,12 +152,14 @@ const AgentPending: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center">
-                      {singleCase.agent === 'Not Assigned' ? (
+                      {!singleCase.assignedAgent ? (
                         <span className="text-sm text-gray-500">Not Assigned</span>
                       ) : (
                         <>
                           <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">{singleCase.agent}</span>
+                          <span className="text-sm text-gray-500">
+                            {singleCase.assignedAgent?.fullname}
+                          </span>
                         </>
                       )}
                     </div>
@@ -159,28 +169,34 @@ const AgentPending: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <button
-                        onClick={() => acceptCase(singleCase._id)}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        disabled={acceptCaseMutation.isPending}>
-                        {acceptCaseMutation.isPending ? (
-                          <FiRefreshCw className="mr-1 animate-spin" />
-                        ) : (
-                          <FiCheck className="mr-1" />
-                        )}
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => rejectCase(singleCase._id)}
-                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        disabled={rejectCaseMutation.isPending}>
-                        {rejectCaseMutation.isPending ? (
-                          <FiRefreshCw className="mr-1 animate-spin" />
-                        ) : (
-                          <FiX className="mr-1" />
-                        )}
-                        Reject
-                      </button>
+                      {singleCase.status?.toLowerCase().trim() === 'pending' && (
+                        <>
+                          <button
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                            onClick={() => acceptCase(singleCase._id)}
+                            disabled={acceptCaseMutation.isPending}>
+                            {acceptCaseMutation.isPending &&
+                            acceptCaseMutation.variables === singleCase._id ? (
+                              <FiRefreshCw className="mr-1 animate-spin" />
+                            ) : (
+                              <FiCheck className="mr-1" />
+                            )}
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => rejectCase(singleCase._id)}
+                            className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            disabled={rejectCaseMutation.isPending}>
+                            {rejectCaseMutation.isPending &&
+                            rejectCaseMutation.variables === singleCase._id ? (
+                              <FiRefreshCw className="mr-1 animate-spin" />
+                            ) : (
+                              <FiX className="mr-1" />
+                            )}
+                            Reject
+                          </button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
