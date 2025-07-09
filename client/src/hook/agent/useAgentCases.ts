@@ -4,7 +4,8 @@ import api from '../../utils/api';
 import { ICase } from '../../Types/Icase';
 
 export const useFetchAgentCases = (agentId?: string) => {
-  const { setPendingCases, setClosedCases, setStats, setLoading, setError } = useAgentCasesStore();
+  const { setActiveCases, setPendingCases, setClosedCases, setStats, setLoading, setError } =
+    useAgentCasesStore();
 
   return useQuery({
     queryKey: ['agentCases', agentId],
@@ -23,14 +24,25 @@ export const useFetchAgentCases = (agentId?: string) => {
             return { ...singleCase, agent: 'Not Assigned' };
           })
         );
+        const active = casesWithAgents.filter(
+          (singleCase: ICase) =>
+            singleCase.status?.toLowerCase() === 'active' &&
+            singleCase.assignedAgent?._id === agentId
+        );
 
         const pending = casesWithAgents.filter(
-          (singleCase: ICase) => singleCase.status === 'pending'
-        );
-        const closed = casesWithAgents.filter(
-          (singleCase: ICase) => singleCase.status === 'closed'
+          (singleCase: ICase) =>
+            singleCase.status?.toLowerCase() === 'pending' &&
+            singleCase.assignedAgent?._id === agentId
         );
 
+        const closed = casesWithAgents.filter(
+          (singleCase: ICase) =>
+            singleCase.status?.toLowerCase() === 'closed' &&
+            singleCase.assignedAgent?._id === agentId
+        );
+
+        setActiveCases(active);
         setPendingCases(pending);
         setClosedCases(closed);
         setStats({
@@ -39,12 +51,10 @@ export const useFetchAgentCases = (agentId?: string) => {
           customers: new Set(casesWithAgents.map(c => c.customerName)).size,
           satisfaction: Math.floor(Math.random() * 30) + 70,
         });
-
         return casesWithAgents;
       } catch (error) {
         console.error('Error fetching cases:', error);
         setError('Failed to fetch cases');
-        throw error;
       } finally {
         setLoading(false);
       }
