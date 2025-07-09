@@ -25,6 +25,7 @@ import AgentSettings from '../pages/agent/AgentSettings';
 import { AuthWrapper } from '../config/authWrapper';
 import DashboardLayout from '../layout/DashboardLayout';
 import { adminMenuItems, agentMenuItems } from '../config/menuConfig';
+import AgentActive from '../pages/agent/AgentActive';
 
 export const router = createBrowserRouter([
   {
@@ -130,6 +131,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <AgentCases />,
+      },
+      {
+        path: 'active',
+        element: <AgentActive />,
       },
       {
         path: 'pending',
