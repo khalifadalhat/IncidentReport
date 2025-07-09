@@ -12,7 +12,7 @@ const AgentPending: React.FC = () => {
   const queryClient = useQueryClient();
 
   const acceptCaseMutation = useMutation({
-    mutationFn: (caseId: string) => api.put(`/cases/${caseId}/accept`),
+    mutationFn: (caseId: string) => api.put(`/cases/accept/${caseId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
     },
@@ -22,7 +22,7 @@ const AgentPending: React.FC = () => {
   });
 
   const rejectCaseMutation = useMutation({
-    mutationFn: (caseId: string) => api.put(`/cases/${caseId}/reject`),
+    mutationFn: (caseId: string) => api.put(`/cases/reject/${caseId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
     },
