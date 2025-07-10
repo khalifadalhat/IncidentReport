@@ -54,12 +54,6 @@ const io = new Server(server, {
   },
 });
 
-if (process.env.NODE_ENV === 'production') {
-  Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
-    io.adapter(createAdapter(pubClient, subClient));
-  });
-}
-
 connectDB();
 
 // Token verification helper
@@ -75,15 +69,13 @@ const verifyToken = token => {
 // Case access verification helper
 const verifyCaseAccess = async (userId, caseId) => {
   try {
-    const Case = require('./models/case');
-    const case_ = await Case.findById(caseId);
+    const caseData = await Case.findById(caseId);
+    if (!caseData) return false;
 
-    if (!case_) return false;
-
-    // Check if user is the customer or assigned agent
+    // Check if user is the customer, assigned agent, or admin
     return (
-      case_.customer.toString() === userId ||
-      (case_.assignedAgent && case_.assignedAgent.toString() === userId)
+      caseData.customer.equals(userId) ||
+      (caseData.assignedAgent && caseData.assignedAgent.equals(userId))
     );
   } catch (error) {
     console.error('Error verifying case access:', error);
@@ -116,18 +108,6 @@ io.use(async (socket, next) => {
 io.on('connection', socket => {
   console.log(`User connected: ${socket.user.userId}`);
 
-  // socket.use((packet, next) => {
-  //   const token = socket.handshake.auth.token;
-  //   const decoded = verifyToken(token);
-
-  //   if (!decoded) {
-  //     return next(new Error('Authentication error'));
-  //   }
-
-  //   socket.decoded = decoded;
-  //   next();
-  // });
-
   socket.on('joinCase', async caseId => {
     try {
       const hasAccess = await verifyCaseAccess(socket.user.userId, caseId);
@@ -154,7 +134,6 @@ io.on('connection', socket => {
       const caseData = await Case.findById(msg.caseId);
       const recipient = socket.user.role === 'agent' ? caseData.customer : caseData.assignedAgent;
 
-      // Create and save message
       const newMessage = new Message({
         sender: socket.user.userId,
         senderRole: socket.user.role,
@@ -166,7 +145,6 @@ io.on('connection', socket => {
       });
 
       await newMessage.save();
-
       await Case.findByIdAndUpdate(msg.caseId, {
         updatedAt: new Date(),
         lastMessage: newMessage._id,
@@ -186,7 +164,6 @@ io.on('connection', socket => {
     }
   });
 
-  // Typing indicator
   socket.on('typing', caseId => {
     socket.to(caseId).emit('userTyping', {
       userId: socket.user.userId,
@@ -194,7 +171,6 @@ io.on('connection', socket => {
     });
   });
 
-  // Mark messages as read
   socket.on('markMessagesRead', async ({ caseId }) => {
     try {
       await Message.updateMany(
@@ -220,7 +196,6 @@ io.on('connection', socket => {
     console.log(`User left case ${caseId}`);
   });
 
-  // Disconnect handler
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.user.userId}`);
   });
@@ -230,18 +205,6 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
-
-// Helper function to verify case access
-async function verifyCaseAccess(userId, caseId) {
-  const caseData = await Case.findById(caseId);
-  if (!caseData) return false;
-
-  return (
-    caseData.customer.equals(userId) ||
-    (caseData.assignedAgent && caseData.assignedAgent.equals(userId)) ||
-    socket.user.role === 'admin'
-  );
-}
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
