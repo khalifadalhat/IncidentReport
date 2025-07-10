@@ -1,24 +1,25 @@
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const http = require("http");
-const { Server } = require("socket.io");
-const connectDB = require("./config/db");
-const cors = require("cors");
-require("dotenv").config();
+const express = require('express');
+const cookieParser = require('cookie-parser');
+const http = require('http');
+const { Server } = require('socket.io');
+const connectDB = require('./config/db');
+const cors = require('cors');
+require('dotenv').config();
 
-const customerRoutes = require("./routes/customerRoutes");
-const caseRoutes = require("./routes/caseRoutes");
-const agentRoutes = require("./routes/agentRoutes");
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-const messageRoutes = require("./routes/messageRoutes");
-const chatHistoryRoutes = require("./routes/chatHistoryRoutes");
-const Message = require("./models/Message");
-const jwt = require("jsonwebtoken");
+const customerRoutes = require('./routes/customerRoutes');
+const caseRoutes = require('./routes/caseRoutes');
+const agentRoutes = require('./routes/agentRoutes');
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const chatHistoryRoutes = require('./routes/chatHistoryRoutes');
+const Message = require('./models/Message');
+const Case = require('./models/case');
+const jwt = require('jsonwebtoken');
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
-  : ["http://localhost:5173"];
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173'];
 
 const app = express();
 const server = http.createServer(app);
@@ -30,7 +31,7 @@ const corsOptions = {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -44,19 +45,29 @@ app.use(cookieParser());
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    methods: ['GET', 'POST'],
     credentials: true,
   },
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
 });
+
+if (process.env.NODE_ENV === 'production') {
+  Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+    io.adapter(createAdapter(pubClient, subClient));
+  });
+}
 
 connectDB();
 
 // Token verification helper
-const verifyToken = (token) => {
+const verifyToken = token => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
-    console.error("JWT verification error:", error);
+    console.error('JWT verification error:', error);
     return null;
   }
 };
@@ -64,7 +75,7 @@ const verifyToken = (token) => {
 // Case access verification helper
 const verifyCaseAccess = async (userId, caseId) => {
   try {
-    const Case = require("./models/case");
+    const Case = require('./models/case');
     const case_ = await Case.findById(caseId);
 
     if (!case_) return false;
@@ -75,141 +86,162 @@ const verifyCaseAccess = async (userId, caseId) => {
       (case_.assignedAgent && case_.assignedAgent.toString() === userId)
     );
   } catch (error) {
-    console.error("Error verifying case access:", error);
+    console.error('Error verifying case access:', error);
     return false;
   }
 };
 
 // Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/customers", customerRoutes);
-app.use("/api", caseRoutes);
-app.use("/api/agents", agentRoutes);
-app.use("/api", userRoutes);
-app.use("/api", messageRoutes);
-app.use("/api", chatHistoryRoutes); 
+app.use('/api/auth', authRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api', caseRoutes);
+app.use('/api/agents', agentRoutes);
+app.use('/api', userRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', chatHistoryRoutes);
+
+// Authentication middleware
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (error) {
+    next(new Error('Authentication error'));
+  }
+});
 
 // Socket.IO Events
-io.on("connection", (socket) => {
-  console.log("New client connected:", socket.id);
+io.on('connection', socket => {
+  console.log(`User connected: ${socket.user.userId}`);
 
-  socket.use((packet, next) => {
-    const token = socket.handshake.auth.token;
-    const decoded = verifyToken(token);
+  // socket.use((packet, next) => {
+  //   const token = socket.handshake.auth.token;
+  //   const decoded = verifyToken(token);
 
-    if (!decoded) {
-      return next(new Error("Authentication error"));
-    }
+  //   if (!decoded) {
+  //     return next(new Error('Authentication error'));
+  //   }
 
-    socket.decoded = decoded;
-    next();
-  });
+  //   socket.decoded = decoded;
+  //   next();
+  // });
 
-  socket.on("joinCase", async (caseId) => {
+  socket.on('joinCase', async caseId => {
     try {
-      const hasAccess = await verifyCaseAccess(
-        socket.decoded.userId || socket.decoded.customerId,
-        caseId
-      );
-      if (!hasAccess) {
-        return socket.emit("error", "Unauthorized case access");
-      }
+      const hasAccess = await verifyCaseAccess(socket.user.userId, caseId);
+      if (!hasAccess) return socket.emit('error', 'Unauthorized access');
 
       socket.join(caseId);
+      const messages = await Message.find({ case: caseId }).sort({ timestamp: 1 }).limit(50);
 
-      // Get initial messages
-      const messageController = require("./controllers/messageController");
-      const initialMessages =
-        await messageController.getInitialMessages(caseId);
-      socket.emit("initialMessages", initialMessages);
-
-      console.log(
-        `User ${socket.decoded.userId || socket.decoded.customerId} joined case ${caseId}`
-      );
+      socket.emit('initialMessages', messages);
     } catch (error) {
-      console.error("Error joining case room:", error);
-      socket.emit("error", "Failed to join case");
+      socket.emit('error', 'Failed to join case');
     }
   });
 
-  socket.on("sendMessage", async (msg) => {
+  socket.on('sendMessage', async msg => {
     try {
-      if (!msg.sender || !msg.text || !msg.caseId) {
-        return socket.emit("error", "Invalid message format");
+      if (!msg.text || !msg.caseId) {
+        return socket.emit('error', 'Invalid message format');
       }
 
-      // Verify user has access to this case
-      const hasAccess = await verifyCaseAccess(
-        socket.decoded.userId || socket.decoded.customerId,
-        msg.caseId
-      );
-      if (!hasAccess) {
-        return socket.emit("error", "Unauthorized case access");
-      }
+      const hasAccess = await verifyCaseAccess(socket.user.userId, msg.caseId);
+      if (!hasAccess) return socket.emit('error', 'Unauthorized access');
+
+      const caseData = await Case.findById(msg.caseId);
+      const recipient = socket.user.role === 'agent' ? caseData.customer : caseData.assignedAgent;
 
       // Create and save message
       const newMessage = new Message({
-        sender: msg.sender,
+        sender: socket.user.userId,
+        senderRole: socket.user.role,
         text: msg.text,
         case: msg.caseId,
-        recipient: msg.recipient,
+        recipient,
+        read: socket.user.role === 'agent',
         timestamp: new Date(),
       });
 
       await newMessage.save();
 
-      const Case = require("./models/case");
-      await Case.findByIdAndUpdate(msg.caseId, { updatedAt: new Date() });
+      await Case.findByIdAndUpdate(msg.caseId, {
+        updatedAt: new Date(),
+        lastMessage: newMessage._id,
+      });
 
-      io.to(msg.caseId).emit("receiveMessage", newMessage);
+      io.to(msg.caseId).emit('receiveMessage', newMessage);
 
-      console.log(`Message sent in case ${msg.caseId} by ${msg.sender}`);
+      if (recipient) {
+        io.to(recipient).emit('newMessageNotification', {
+          caseId: msg.caseId,
+          message: newMessage,
+        });
+      }
     } catch (error) {
-      console.error("Error handling message:", error);
-      socket.emit("error", "Failed to send message");
+      console.error('Message error:', error);
+      socket.emit('error', 'Failed to send message');
     }
   });
 
-  socket.on("markAsRead", async (data) => {
+  // Typing indicator
+  socket.on('typing', caseId => {
+    socket.to(caseId).emit('userTyping', {
+      userId: socket.user.userId,
+      name: socket.user.name,
+    });
+  });
+
+  // Mark messages as read
+  socket.on('markMessagesRead', async ({ caseId }) => {
     try {
-      const { caseId, messageIds } = data;
-
-      const hasAccess = await verifyCaseAccess(
-        socket.decoded.userId || socket.decoded.customerId,
-        caseId
+      await Message.updateMany(
+        {
+          case: caseId,
+          recipient: socket.user.userId,
+          read: false,
+        },
+        { $set: { read: true } }
       );
-      if (!hasAccess) {
-        return socket.emit("error", "Unauthorized case access");
-      }
 
-      let updateFilter = { case: caseId };
-      if (messageIds && messageIds.length > 0) {
-        updateFilter._id = { $in: messageIds };
-      }
-
-      await Message.updateMany(updateFilter, { read: true });
-
-      socket.to(caseId).emit("messagesRead", { caseId, messageIds });
+      io.to(caseId).emit('messagesRead', {
+        caseId,
+        userId: socket.user.userId,
+      });
     } catch (error) {
-      console.error("Error marking messages as read:", error);
-      socket.emit("error", "Failed to mark messages as read");
+      console.error('Read receipt error:', error);
     }
   });
 
-  socket.on("leaveCase", (caseId) => {
+  socket.on('leaveCase', caseId => {
     socket.leave(caseId);
     console.log(`User left case ${caseId}`);
   });
 
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
+  // Disconnect handler
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.user.userId}`);
   });
 });
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: "Something went wrong!" });
+  res.status(500).json({ error: 'Something went wrong!' });
 });
+
+// Helper function to verify case access
+async function verifyCaseAccess(userId, caseId) {
+  const caseData = await Case.findById(caseId);
+  if (!caseData) return false;
+
+  return (
+    caseData.customer.equals(userId) ||
+    (caseData.assignedAgent && caseData.assignedAgent.equals(userId)) ||
+    socket.user.role === 'admin'
+  );
+}
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
