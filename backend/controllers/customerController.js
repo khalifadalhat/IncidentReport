@@ -186,15 +186,3 @@ exports.authMiddleware = (req, res, next) => {
     return res.status(401).json({ msg: 'Token is not valid' });
   }
 };
-
-exports.verifyToken = async (req, res) => {
-  try {
-    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.json({ isValid: false });
-
-    jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ isValid: true });
-  } catch (err) {
-    res.json({ isValid: false });
-  }
-};
