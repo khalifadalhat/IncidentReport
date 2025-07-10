@@ -16,14 +16,38 @@ const CustomerLogin: React.FC = () => {
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(!!localStorage.getItem('rememberedEmail'));
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for saved session
-    const token = Cookies.get('token');
-    if (token) {
-      navigate('/customer');
-    }
+    const checkAuthStatus = async () => {
+      const token = Cookies.get('token');
+
+      if (!token) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      try {
+        const response = await api.get('/customers/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.data.customer) {
+          navigate('/customer');
+        }
+      } catch (error) {
+        Cookies.remove('token');
+        Cookies.remove('customer');
+        console.log('Token invalid or expired, user needs to login again');
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAuthStatus();
   }, [navigate]);
 
   const showMessage = (msg: string, type: 'success' | 'error') => {
@@ -67,43 +91,72 @@ const CustomerLogin: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.post('/customers/login', {
-        ...formData,
-        remember: rememberMe,
+        email: formData.email,
+        password: formData.password,
       });
 
-      // Save email if remember me is checked
       if (rememberMe) {
         safeLocalStorage.setEmail(formData.email);
       } else {
         safeLocalStorage.clearEmail();
       }
 
-      Cookies.set('token', response.data.token, {
+      // Set cookies with proper expiration
+      const cookieOptions = {
         expires: 1,
-        secure: true,
-        sameSite: 'strict',
-      });
-      Cookies.set('customer', response.data.customer, {
-        secure: true,
-        sameSite: 'strict',
-      });
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict' as const,
+      };
+
+      Cookies.set('token', response.data.token, cookieOptions);
+      Cookies.set('customer', JSON.stringify(response.data.customer), cookieOptions);
 
       showMessage('Login successful! Redirecting...', 'success');
 
       setTimeout(() => {
         navigate('/customer');
       }, 1500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       const errorMessage =
-        error.response?.data?.msg ??
-        error.response?.data?.error ??
+        (error as { response?: { data?: { msg?: string; error?: string } } })?.response?.data
+          ?.msg ??
+        (error as { response?: { data?: { msg?: string; error?: string } } })?.response?.data
+          ?.error ??
         'Login failed. Please try again.';
       showMessage(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading spinner while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-600 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">

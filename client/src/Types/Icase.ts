@@ -10,9 +10,19 @@ export interface AssignedAgent {
   role: string;
 }
 
+export interface Customer {
+  _id: string;
+  fullname: string;
+  location: string;
+  gender: string;
+  phone: number;
+  email: string;
+  status: string;
+}
 export interface ICase {
   _id: string;
   customerName: string;
+  customer: Customer;
   issue: string;
   department: string;
   status: string;
@@ -22,6 +32,8 @@ export interface ICase {
   createdAt: string;
   resolvedAt: string;
   closedAt: string;
+  unreadCount?: number;
+  updatedAt?: string | Date;
 }
 
 export interface ICustomer {
@@ -56,12 +68,22 @@ export interface IAgent {
   role: string;
 }
 
+export interface Recipient {
+  _id: string;
+  fullname: string;
+  email: string;
+  phone: number;
+}
+
 export interface IMessage {
+  _id: string;
   sender: string;
+  senderModel: string;
   text: string;
   caseId: string;
-  recipient: string;
+  recipient: Recipient;
   timestamp?: Date;
+  read: boolean;
 }
 
 export type UserRole = 'admin' | 'agent' | 'customer';

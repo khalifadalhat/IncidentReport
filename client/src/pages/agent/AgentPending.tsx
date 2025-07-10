@@ -13,11 +13,12 @@ const AgentPending: React.FC = () => {
   const queryClient = useQueryClient();
 
   const userData = Cookie.get('userData');
-  const agent = userData ? JSON.parse(userData) : null;
+  const user = userData ? JSON.parse(userData) : null;
+  const agentId = user?.id;
 
   const acceptCaseMutation = useMutation({
     mutationFn: (caseId: string) =>
-      api.put(`/cases/accept/${caseId}`, { status: 'accepted', agentId: agent?.id }),
+      api.put(`/cases/accept/${caseId}`, { status: 'accepted', agentId: agentId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
       refetch();

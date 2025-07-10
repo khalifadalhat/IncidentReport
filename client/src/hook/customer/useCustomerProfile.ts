@@ -17,7 +17,7 @@ export const useFetchCustomerProfile = () => {
         }
 
         const response = await api.get('/customers/profile');
-        const customerData = response.data;
+        const customerData = response.data.customer;
         setCustomer(customerData);
         localStorage.setItem('customer', JSON.stringify(customerData));
         return customerData;

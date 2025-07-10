@@ -9,18 +9,19 @@ import { useFetchAgentCases } from '../../hook/agent/useAgentCases';
 
 const AgentActive: React.FC = () => {
   const userData = Cookie.get('userData');
-  const agent = userData ? JSON.parse(userData) : null;
+  const user = userData ? JSON.parse(userData) : null;
+  const agentId = user?.id;
 
   const { activeCases, loading, error } = useAgentCasesStore();
 
   console.log(activeCases);
 
-  const { refetch } = useFetchAgentCases(agent?.id);
+  const { refetch } = useFetchAgentCases(agentId);
   const queryClient = useQueryClient();
 
   const resolvedCaseMutation = useMutation({
     mutationFn: (caseId: string) =>
-      api.put(`/cases/status/${caseId}`, { status: 'resolved', agentId: agent?.id }),
+      api.put(`/cases/status/${caseId}`, { status: 'resolved', agentId: agentId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agentCases'] });
       refetch();

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiChevronRight } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiChevronRight, FiMessageSquare } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { useCustomerStore } from '../../store/customer/useCustomerStore';
 import { useFetchCustomerProfile } from '../../hook/customer/useCustomerProfile';
@@ -8,11 +8,14 @@ import { useFetchCustomerProfile } from '../../hook/customer/useCustomerProfile'
 const CustomerDetails: React.FC = () => {
   const navigate = useNavigate();
   const { customer, setCustomer } = useCustomerStore();
-
   useFetchCustomerProfile();
 
   const handleContinue = () => {
     navigate('/customer/department');
+  };
+
+  const handleChat = () => {
+    navigate('/customer/chat-with-agent');
   };
 
   return (
@@ -94,7 +97,13 @@ const CustomerDetails: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-1">
+              <button
+                onClick={handleChat}
+                className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-all duration-300">
+                <FiMessageSquare className="mr-2" />
+                Chat with Agent
+              </button>
               <button
                 onClick={handleContinue}
                 className="flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-6 rounded-lg shadow-md transition-all duration-300">

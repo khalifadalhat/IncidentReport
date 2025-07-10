@@ -1,17 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
-import { format } from 'date-fns';
-import { FiSend, FiUser, FiMessageSquare, FiClock } from 'react-icons/fi';
-import { motion } from 'framer-motion';
+import { FiSend, FiPaperclip, FiMessageSquare, FiSmile, FiSearch } from 'react-icons/fi';
 import { useCustomerStore } from '../../store/customer/useCustomerStore';
 import api from '../../utils/api';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import EmojiPicker from 'emoji-picker-react';
+import { useSocket } from '@/context/SocketContext';
+import { User } from 'lucide-react';
 
 interface Message {
+  _id?: string;
   sender: string;
   text: string;
   timestamp: Date;
-  _id?: string;
+  read?: boolean;
 }
 
 interface Agent {
@@ -19,24 +21,28 @@ interface Agent {
   fullname: string;
   department: string;
   isActive: boolean;
+  lastActive?: Date;
 }
 
 interface CaseDetails {
   _id: string;
+  customerName: string;
   department: string;
   issue: string;
   status: string;
-  location: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 const ChatWithAgent: React.FC = () => {
   const { caseId } = useCustomerStore();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [text, setText] = useState('');
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { socket, isConnected } = useSocket();
 
   // Fetch case details
   const { data: caseDetails } = useQuery<CaseDetails>({
@@ -53,65 +59,76 @@ const ChatWithAgent: React.FC = () => {
     queryKey: ['agents'],
     queryFn: async () => {
       const response = await api.get('/agents/available');
-      return response.data;
+      return response.data.map((agent: Agent) => ({
+        ...agent,
+        lastActive: new Date(),
+      }));
     },
   });
 
+  // Filter agents based on search term
+  const filteredAgents = agentList.filter(
+    agent =>
+      agent.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agent.department.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(api.defaults.baseURL ?? '', {
-      withCredentials: true,
-      transports: ['websocket'],
-    });
-    setSocket(newSocket);
+    if (!socket || !isConnected || !caseId) return;
+
+    const handleInitialMessages = (initialMessages: Message[]) => {
+      setMessages(
+        initialMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
+      );
+    };
+
+    const handleNewMessage = (newMessage: Message) => {
+      setMessages(prev => [
+        ...prev,
+        {
+          ...newMessage,
+          timestamp: new Date(newMessage.timestamp),
+        },
+      ]);
+    };
+
+    socket.on('initialMessages', handleInitialMessages);
+    socket.on('receiveMessage', handleNewMessage);
+
+    // Join the case room
+    socket.emit('joinCase', caseId);
 
     return () => {
-      newSocket.disconnect();
+      socket.off('initialMessages', handleInitialMessages);
+      socket.off('receiveMessage', handleNewMessage);
     };
-  }, []);
+  }, [socket, isConnected, caseId]);
 
-  // Socket event handlers
-  useEffect(() => {
-    if (!socket || !caseId) return;
-
-    socket.on('connect', () => {
-      socket.emit('joinCase', caseId);
-    });
-
-    socket.on('initialMessages', (initialMessages: Message[]) => {
-      setMessages(initialMessages);
-    });
-
-    socket.on('receiveMessage', (message: Message) => {
-      setMessages(prev => [...prev, message]);
-    });
-
-    return () => {
-      socket.off('initialMessages');
-      socket.off('receiveMessage');
-    };
-  }, [socket, caseId]);
-
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = () => {
-    if (!text.trim() || !socket || !caseId || !activeAgent) return;
+    if (!message.trim() || !socket || !caseId || !activeAgent) return;
 
     const newMessage: Message = {
       sender: 'customer',
-      text,
+      text: message,
       timestamp: new Date(),
     };
 
     socket.emit('sendMessage', {
       ...newMessage,
       caseId,
-      recipient: activeAgent,
+      recipient: activeAgent._id,
     });
-    setText('');
+
+    setMessage('');
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -121,165 +138,211 @@ const ChatWithAgent: React.FC = () => {
     }
   };
 
+  const handleEmojiSelect = (emojiData: { emoji: string }) => {
+    setMessage(prev => prev + emojiData.emoji);
+  };
+
+  const formatTime = (date: Date) => format(date, 'h:mm a');
+  const formatMessageDate = (date: Date) => format(date, 'MMMM d, yyyy');
+
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-full md:w-1/4 bg-white border-r border-gray-200 flex flex-col">
-        {/* Case Details */}
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold flex items-center">
-            <FiMessageSquare className="mr-2 text-blue-600" />
-            Support Case
-          </h2>
-          {caseDetails && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-4 bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-800">{caseDetails.department}</h3>
-              <div className="flex items-center mt-2 text-sm text-gray-600">
-                <FiClock className="mr-1" />
-                {format(new Date(caseDetails.createdAt), 'MMM d, h:mm a')}
-              </div>
-              <p className="mt-2 text-sm text-gray-700">{caseDetails.issue}</p>
-              <div className="mt-3 flex justify-between items-center">
+      {/* Sidebar - Agent List */}
+      <div className="w-1/3 flex flex-col border-r border-gray-300 bg-white">
+        {/* Search Bar */}
+        <div className="p-3 bg-gray-50">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search agents..."
+              className="w-full py-2 pl-10 pr-4 bg-white rounded-lg focus:outline-none"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Case Info */}
+        {caseDetails && (
+          <div className="p-3 border-b border-gray-200">
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <h3 className="font-medium text-blue-800">{caseDetails.department} Support</h3>
+              <p className="text-sm text-gray-700 mt-1 truncate">{caseDetails.issue}</p>
+              <div className="flex justify-between items-center mt-2 text-xs">
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    caseDetails.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : caseDetails.status === 'active'
+                  className={`px-2 py-1 rounded-full ${
+                    caseDetails.status === 'active'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                      : 'bg-yellow-100 text-yellow-800'
                   }`}>
                   {caseDetails.status}
                 </span>
-                <span className="text-xs text-gray-500">{caseDetails.location}</span>
+                <span className="text-gray-500">
+                  Created: {format(new Date(caseDetails.createdAt), 'MMM d')}
+                </span>
               </div>
-            </motion.div>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
 
         {/* Agent List */}
-        <div className="p-4 flex-1 overflow-y-auto">
-          <h3 className="font-medium mb-3 flex items-center">
-            <FiUser className="mr-2 text-blue-600" />
-            Available Agents
-          </h3>
-          {agentList.length === 0 ? (
-            <div className="text-center py-4 text-gray-500">No agents available at the moment</div>
-          ) : (
-            <div className="space-y-2">
-              {agentList.map(agent => (
-                <motion.div
-                  key={agent._id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`p-3 rounded-lg cursor-pointer flex items-center ${
-                    activeAgent === agent._id
-                      ? 'bg-blue-100 border border-blue-200'
-                      : 'hover:bg-gray-50 border border-transparent'
-                  }`}
-                  onClick={() => setActiveAgent(agent._id)}>
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white mr-3 ${
-                      agent.isActive ? 'bg-green-500' : 'bg-gray-400'
-                    }`}>
-                    {agent.fullname.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{agent.fullname}</p>
-                    <p className="text-xs text-gray-500">{agent.department}</p>
-                  </div>
-                </motion.div>
-              ))}
+        <div className="flex-1 overflow-y-auto">
+          {filteredAgents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
+              <FiMessageSquare className="h-10 w-10 mb-2" />
+              <p>No agents available</p>
             </div>
+          ) : (
+            filteredAgents.map(agent => (
+              <div
+                key={agent._id}
+                onClick={() => setActiveAgent(agent)}
+                className={`flex items-center p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
+                  activeAgent?._id === agent._id ? 'bg-blue-50' : ''
+                }`}>
+                <User
+                  name={agent.fullname}
+                  size="40"
+                  className="mr-3 rounded-full"
+                  color={agent.isActive ? '#3b82f6' : '#9ca3af'}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium text-gray-900 truncate">{agent.fullname}</h3>
+                    <span className="text-xs text-gray-500">
+                      {agent.isActive ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 truncate">{agent.department} Department</p>
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="p-4 border-b border-gray-200 bg-white flex items-center">
-          {activeAgent ? (
-            <>
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
-                {agentList.find(a => a._id === activeAgent)?.fullname.charAt(0) || 'A'}
-              </div>
-              <div>
-                <h2 className="font-semibold">
-                  {agentList.find(a => a._id === activeAgent)?.fullname || 'Agent'}
-                </h2>
+        {activeAgent ? (
+          <>
+            {/* Chat Header */}
+            <div className="flex items-center p-3 border-b border-gray-300 bg-gray-50">
+              <User
+                name={activeAgent.fullname}
+                size="40"
+                className="mr-3 rounded-full"
+                color={activeAgent.isActive ? '#3b82f6' : '#9ca3af'}
+              />
+              <div className="flex-1">
+                <h3 className="font-medium">{activeAgent.fullname}</h3>
                 <p className="text-xs text-gray-500">
-                  {agentList.find(a => a._id === activeAgent)?.department || 'Support'}
+                  {activeAgent.department} • {activeAgent.isActive ? 'Online' : 'Offline'}
                 </p>
               </div>
-            </>
-          ) : (
-            <h2 className="font-semibold text-gray-600">Please select an agent to chat</h2>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <FiMessageSquare className="text-4xl mb-2" />
-              <p>No messages yet</p>
-              <p className="text-sm mt-1">Start the conversation</p>
             </div>
-          ) : (
-            messages.map((message, index) => (
-              <motion.div
-                key={message._id || index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`mb-4 flex ${
-                  message.sender === 'customer' ? 'justify-end' : 'justify-start'
-                }`}>
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender === 'customer'
-                      ? 'bg-blue-500 text-white rounded-br-none'
-                      : 'bg-white border border-gray-200 rounded-bl-none'
-                  }`}>
-                  <p>{message.text}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.sender === 'customer' ? 'text-blue-100' : 'text-gray-500'
-                    }`}>
-                    {format(new Date(message.timestamp), 'h:mm a')}
-                  </p>
-                </div>
-              </motion.div>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Message Input */}
-        <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={text}
-              onChange={e => setText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 border border-gray-300 rounded-l-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Type your message..."
-              disabled={!activeAgent}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!text.trim() || !activeAgent}
-              className={`bg-blue-500 text-white px-4 py-2 rounded-r-lg flex items-center ${
-                !text.trim() || !activeAgent ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
-              }`}>
-              <FiSend className="mr-1" />
-              Send
-            </button>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <FiMessageSquare className="h-10 w-10 mb-2" />
+                  <p>No messages yet</p>
+                  <p className="text-sm mt-1">Start the conversation with {activeAgent.fullname}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((msg, index) => {
+                    const showDateHeader =
+                      index === 0 ||
+                      formatMessageDate(new Date(messages[index - 1].timestamp)) !==
+                        formatMessageDate(new Date(msg.timestamp));
+
+                    return (
+                      <React.Fragment key={index}>
+                        {showDateHeader && (
+                          <div className="flex justify-center my-2">
+                            <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+                              {formatMessageDate(new Date(msg.timestamp))}
+                            </div>
+                          </div>
+                        )}
+                        <div
+                          className={`flex ${
+                            msg.sender === 'customer' ? 'justify-end' : 'justify-start'
+                          }`}>
+                          <div
+                            className={`max-w-xs md:max-w-md rounded-lg p-3 ${
+                              msg.sender === 'customer'
+                                ? 'bg-blue-500 text-white rounded-br-none'
+                                : 'bg-white text-gray-800 rounded-bl-none shadow'
+                            }`}>
+                            <div className="text-sm">{msg.text}</div>
+                            <div
+                              className={`text-xs mt-1 text-right ${
+                                msg.sender === 'customer' ? 'text-blue-100' : 'text-gray-500'
+                              }`}>
+                              {formatTime(new Date(msg.timestamp))}
+                              {msg.sender !== 'customer' && !msg.read && (
+                                <span className="ml-1 text-blue-400">•</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-3 bg-white border-t border-gray-300">
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
+                className="flex items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="p-2 text-gray-500 hover:text-blue-500">
+                  <FiSmile className="h-5 w-5" />
+                </button>
+                <button type="button" className="p-2 text-gray-500 hover:text-blue-500">
+                  <FiPaperclip className="h-5 w-5" />
+                </button>
+                <input
+                  type="text"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="flex-1 py-2 px-4 mx-2 bg-gray-100 rounded-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-200"
+                  placeholder="Type a message"
+                />
+                <button
+                  type="submit"
+                  disabled={!message.trim()}
+                  className="p-2 text-blue-500 hover:text-blue-600 disabled:text-gray-400">
+                  <FiSend className="h-5 w-5" />
+                </button>
+              </form>
+              {showEmojiPicker && (
+                <div className="absolute bottom-16 right-4 z-10">
+                  <EmojiPicker onEmojiClick={handleEmojiSelect} />
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+            <FiMessageSquare className="h-16 w-16 mb-4" />
+            <h3 className="text-lg font-medium">No agent selected</h3>
+            <p className="text-sm">Select an agent from the sidebar to start chatting</p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

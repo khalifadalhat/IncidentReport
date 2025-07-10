@@ -8,10 +8,11 @@ import { FaUserTie } from 'react-icons/fa';
 
 const AgentResolved: React.FC = () => {
   const userData = Cookie.get('userData');
-  const agent = userData ? JSON.parse(userData) : null;
+  const user = userData ? JSON.parse(userData) : null;
+  const agentId = user?.id;
 
   const { resolvedCases, loading, error } = useResolvedCasesStore();
-  const { refetch } = useResolvedCases(agent?.id);
+  const { refetch } = useResolvedCases(agentId);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy h:mm a');

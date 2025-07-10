@@ -15,6 +15,7 @@ export const useFetchAgentCases = (agentId?: string) => {
         setError(null);
 
         const response = await api.get(`/cases/agent/${agentId}`);
+
         const agentCases = response.data.cases;
 
         const active = agentCases.filter(
