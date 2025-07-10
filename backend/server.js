@@ -134,6 +134,8 @@ io.on('connection', socket => {
       const caseData = await Case.findById(msg.caseId);
       const recipient = socket.user.role === 'agent' ? caseData.customer : caseData.assignedAgent;
 
+      console.log('Received message:', msg);
+
       const newMessage = new Message({
         sender: socket.user.userId,
         senderRole: socket.user.role,
@@ -150,6 +152,7 @@ io.on('connection', socket => {
         lastMessage: newMessage._id,
       });
 
+      console.log('Saved message:', newMessage);
       io.to(msg.caseId).emit('receiveMessage', newMessage);
 
       if (recipient) {
