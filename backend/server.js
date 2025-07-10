@@ -138,10 +138,11 @@ io.on('connection', socket => {
 
       const newMessage = new Message({
         sender: socket.user.userId,
-        senderRole: socket.user.role,
+        senderModel: socket.user.role,
         text: msg.text,
         case: msg.caseId,
         recipient,
+        recipientModel: socket.user.role === 'agent' ? 'customer' : 'agent',
         read: socket.user.role === 'agent',
         timestamp: new Date(),
       });
