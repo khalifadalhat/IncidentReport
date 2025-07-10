@@ -13,6 +13,8 @@ const AgentActive: React.FC = () => {
 
   const { activeCases, loading, error } = useAgentCasesStore();
 
+  console.log(activeCases);
+
   const { refetch } = useFetchAgentCases(agent?.id);
   const queryClient = useQueryClient();
 
@@ -20,7 +22,8 @@ const AgentActive: React.FC = () => {
     mutationFn: (caseId: string) =>
       api.put(`/cases/status/${caseId}`, { status: 'resolved', agentId: agent?.id }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
+      queryClient.invalidateQueries({ queryKey: ['agentCases'] });
+      refetch();
     },
     onError: error => {
       console.error('Error accepting case:', error);
@@ -104,75 +107,71 @@ const AgentActive: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {activeCases
-                .filter(singleCase => singleCase.assignedAgent?._id === agent?.id)
-                .map(singleCase => (
-                  <TableRow key={singleCase._id}>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                          <FiUser className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {singleCase.customerName}
-                          </div>
+              {activeCases.map(singleCase => (
+                <TableRow key={singleCase._id}>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <FiUser className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {singleCase.customerName}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {singleCase.issue}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {singleCase.department}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-500">{singleCase.location}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {!singleCase.assignedAgent ? (
-                          <span className="text-sm text-gray-500">Not Assigned</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {singleCase.issue}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {singleCase.department}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-500">{singleCase.location}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      {!singleCase.assignedAgent ? (
+                        <span className="text-sm text-gray-500">Not Assigned</span>
+                      ) : (
+                        <>
+                          <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            {singleCase.assignedAgent?.fullname}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-500">{formatDate(singleCase.createdAt)}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <button
+                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        onClick={() => acceptCase(singleCase._id)}
+                        disabled={resolvedCaseMutation.isPending}>
+                        {resolvedCaseMutation.isPending &&
+                        resolvedCaseMutation.variables === singleCase._id ? (
+                          <FiRefreshCw className="mr-1 animate-spin" />
                         ) : (
-                          <>
-                            <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-500">
-                              {singleCase.assignedAgent?.fullname}
-                            </span>
-                          </>
+                          <FiCheck className="mr-1" />
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-gray-500">
-                        {formatDate(singleCase.createdAt)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <button
-                          className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                          onClick={() => acceptCase(singleCase._id)}
-                          disabled={resolvedCaseMutation.isPending}>
-                          {resolvedCaseMutation.isPending &&
-                          resolvedCaseMutation.variables === singleCase._id ? (
-                            <FiRefreshCw className="mr-1 animate-spin" />
-                          ) : (
-                            <FiCheck className="mr-1" />
-                          )}
-                          Resolved
-                        </button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        Resolved
+                      </button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </tbody>
           </table>
         </div>

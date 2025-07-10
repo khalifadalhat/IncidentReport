@@ -1,12 +1,17 @@
 import React from 'react';
+import Cookie from 'js-cookie';
 import { FiRefreshCw, FiAlertCircle, FiUser, FiArchive, FiEye } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { useResolvedCasesStore } from '../../store/agent/useResolveCases';
 import { useResolvedCases } from '../../hook/agent/useResolveCases';
+import { FaUserTie } from 'react-icons/fa';
 
 const AgentResolved: React.FC = () => {
+  const userData = Cookie.get('userData');
+  const agent = userData ? JSON.parse(userData) : null;
+
   const { resolvedCases, loading, error } = useResolvedCasesStore();
-  const { refetch } = useResolvedCases();
+  const { refetch } = useResolvedCases(agent?.id);
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy h:mm a');
@@ -105,8 +110,17 @@ const AgentResolved: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-gray-500">
-                      {singleCase.agent || 'Not Assigned'}
+                    <div className="flex items-center">
+                      {!singleCase.assignedAgent ? (
+                        <span className="text-sm text-gray-500">Not Assigned</span>
+                      ) : (
+                        <>
+                          <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-500">
+                            {singleCase.assignedAgent?.fullname}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -124,7 +138,6 @@ const AgentResolved: React.FC = () => {
   );
 };
 
-// Reusable table components
 const TableHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <th
     scope="col"

@@ -20,6 +20,7 @@ const AgentPending: React.FC = () => {
       api.put(`/cases/accept/${caseId}`, { status: 'accepted', agentId: agent?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingCases'] });
+      refetch();
     },
     onError: error => {
       console.error('Error accepting case:', error);
