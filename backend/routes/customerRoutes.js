@@ -12,7 +12,6 @@ const {
 // Public routes
 router.post('/register', registerCustomer);
 router.post('/login', authMiddleware, loginCustomer);
-router.post('/verify', verifyToken);
 
 // Protected routes
 router.get('/profile', authMiddleware, getCustomerProfile);
