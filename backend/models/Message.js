@@ -10,7 +10,7 @@ const MessageSchema = new mongoose.Schema(
     senderModel: {
       type: String,
       required: true,
-      enum: ['Customer', 'Agent'],
+      enum: ['customer', 'agent'],
     },
     text: {
       type: String,
@@ -28,7 +28,7 @@ const MessageSchema = new mongoose.Schema(
     },
     recipientModel: {
       type: String,
-      enum: ['Customer', 'Agent'],
+      enum: ['customer', 'agent'],
     },
     read: {
       type: Boolean,
