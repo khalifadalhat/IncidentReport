@@ -14,51 +14,43 @@ export const useFetchAgentCases = (agentId?: string) => {
         setLoading(true);
         setError(null);
 
-        const response = await api.get('/cases');
-        const casesWithAgents = await Promise.all(
-          response.data.cases.map(async (singleCase: ICase) => {
-            if (singleCase.assignedAgent && agentId) {
-              const agentResponse = await api.get(`/cases/agent/${agentId}`);
-              return { ...singleCase, agent: agentResponse.data.agent.fullname };
-            }
-            return { ...singleCase, agent: 'Not Assigned' };
-          })
-        );
-        const active = casesWithAgents.filter(
-          (singleCase: ICase) =>
-            singleCase.status?.toLowerCase() === 'active' &&
-            singleCase.assignedAgent?._id === agentId
+        const response = await api.get(`/cases/agent/${agentId}`);
+        const agentCases = response.data.cases;
+
+        const active = agentCases.filter(
+          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'active'
         );
 
-        const pending = casesWithAgents.filter(
-          (singleCase: ICase) =>
-            singleCase.status?.toLowerCase() === 'pending' &&
-            singleCase.assignedAgent?._id === agentId
+        const pending = agentCases.filter(
+          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'pending'
         );
 
-        const closed = casesWithAgents.filter(
-          (singleCase: ICase) =>
-            singleCase.status?.toLowerCase() === 'closed' &&
-            singleCase.assignedAgent?._id === agentId
+        const resolved = agentCases.filter(
+          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'resolved'
         );
 
         setActiveCases(active);
         setPendingCases(pending);
-        setClosedCases(closed);
+        setClosedCases(resolved);
+
         setStats({
           pending: pending.length,
-          resolved: closed.length,
-          customers: new Set(casesWithAgents.map(c => c.customerName)).size,
+          resolved: resolved.length,
+          customers: new Set(agentCases.map((c: ICase) => c.customerName)).size,
           satisfaction: Math.floor(Math.random() * 30) + 70,
         });
-        return casesWithAgents;
+
+        return agentCases;
       } catch (error) {
         console.error('Error fetching cases:', error);
         setError('Failed to fetch cases');
+        throw error;
       } finally {
         setLoading(false);
       }
     },
     enabled: !!agentId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
