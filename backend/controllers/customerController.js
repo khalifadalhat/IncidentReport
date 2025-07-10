@@ -165,7 +165,7 @@ exports.updateCustomerProfile = async (req, res) => {
 
 // Authentication middleware
 exports.authMiddleware = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
     return res.status(401).json({ msg: 'No token, authorization denied' });
@@ -173,9 +173,28 @@ exports.authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const now = Date.now().valueOf() / 1000;
+    if (decoded.exp < now) {
+      return res.status(401).json({ msg: 'Token has expired' });
+    }
+
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid' });
+    res.clearCookie('token');
+    return res.status(401).json({ msg: 'Token is not valid' });
+  }
+};
+
+exports.verifyToken = async (req, res) => {
+  try {
+    const token = req.cookies.token || req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.json({ isValid: false });
+
+    jwt.verify(token, process.env.JWT_SECRET);
+    res.json({ isValid: true });
+  } catch (err) {
+    res.json({ isValid: false });
   }
 };
