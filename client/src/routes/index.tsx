@@ -26,6 +26,8 @@ import { AuthWrapper } from '../config/authWrapper';
 import DashboardLayout from '../layout/DashboardLayout';
 import { adminMenuItems, agentMenuItems } from '../config/menuConfig';
 import AgentActive from '../pages/agent/AgentActive';
+import AgentCaseDetails from '@/components/agent/agentCasedetails';
+import PendingCaseDetails from '@/components/agent/PendingCasedetails';
 
 export const router = createBrowserRouter([
   {
@@ -134,11 +136,30 @@ export const router = createBrowserRouter([
       },
       {
         path: 'active',
-        element: <AgentActive />,
+        children: [
+          {
+            index: true,
+            element: <AgentActive />,
+          },
+          {
+            path: ':caseId',
+            element: <AgentCaseDetails />,
+          },
+        ],
       },
       {
         path: 'pending',
-        element: <AgentPending />,
+
+        children: [
+          {
+            index: true,
+            element: <AgentPending />,
+          },
+          {
+            path: ':caseId',
+            element: <PendingCaseDetails />,
+          },
+        ],
       },
       {
         path: 'customers',

@@ -65,14 +65,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="hidden md:block w-64 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl">
+      <aside className="hidden md:block w-64">
         <div className="p-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
               <LayoutDashboard className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-white font-bold text-lg">{title}</h2>
+              <h2 className="text-gray-700 font-bold text-lg">{title}</h2>
               <p className="text-slate-400 text-sm">{subtitle}</p>
             </div>
           </div>
@@ -88,7 +88,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
+      <main className="flex-1 p-2 md:p-2 overflow-x-hidden border border-slate-300 rounded-xl">
         <Outlet />
       </main>
     </div>
@@ -107,12 +107,12 @@ const NavItem: React.FC<{ item: MenuItem }> = ({ item }) => {
         to={item.href}
         className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${
           isActive
-            ? 'bg-blue-600 text-white'
-            : 'text-slate-300 hover:bg-slate-700/50 hover:text-white'
+            ? 'bg-gray-900 text-white'
+            : 'text-gray-900 hover:bg-slate-700/50 hover:text-white'
         }`}>
         <IconComponent
           className={`w-5 h-5 mr-3 transition-colors ${
-            isActive ? 'text-white' : 'text-blue-400 group-hover:text-blue-300'
+            isActive ? 'text-white' : 'text-gray-900 group-hover:text-gray-700'
           }`}
         />
         <span className="font-medium">{item.name}</span>

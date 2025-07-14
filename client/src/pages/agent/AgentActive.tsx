@@ -1,11 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Cookie from 'js-cookie';
-import { FiCheck, FiRefreshCw, FiAlertCircle, FiMapPin, FiUser } from 'react-icons/fi';
-import { FaUserTie } from 'react-icons/fa';
+import { FiCheck, FiRefreshCw, FiAlertCircle, FiMoreHorizontal, FiInfo } from 'react-icons/fi';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../utils/api';
 import { useAgentCasesStore } from '../../store/agent/useAgentCasesStore';
 import { useFetchAgentCases } from '../../hook/agent/useAgentCases';
+import { useNavigate } from 'react-router-dom';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+interface Case {
+  _id: string;
+  customerName: string;
+  issue: string;
+  department: string;
+  location: string;
+  assignedAgent?: {
+    fullname: string;
+  };
+  createdAt: string;
+  status: string;
+}
 
 const AgentActive: React.FC = () => {
   const userData = Cookie.get('userData');
@@ -14,33 +54,37 @@ const AgentActive: React.FC = () => {
 
   const { activeCases, loading, error } = useAgentCasesStore();
 
-  console.log(activeCases);
-
   const { refetch } = useFetchAgentCases(agentId);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const [openDialogId, setOpenDialogId] = useState<string | null>(null);
 
   const resolvedCaseMutation = useMutation({
-    mutationFn: (caseId: string) =>
-      api.put(`/cases/status/${caseId}`, { status: 'resolved', agentId: agentId }),
+    mutationFn: (caseId: string) => {
+      if (!agentId) {
+        console.error('Agent ID is not available for resolving case.');
+        toast.error('Agent ID is missing. Please log in again.');
+        return Promise.reject(new Error('Agent ID missing'));
+      }
+      return api.put(`/cases/status/${caseId}`, { status: 'resolved', agentId: agentId });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agentCases'] });
       refetch();
+      setOpenDialogId(null);
+      toast.success('Case resolved successfully!');
     },
-    onError: error => {
-      console.error('Error accepting case:', error);
+    onError: (error: any) => {
+      const errorMessage =
+        error.response?.data?.message || error.message || 'An unknown error occurred.';
+      console.error('Error resolving case:', errorMessage);
+      toast.error(`Error: ${errorMessage}`);
     },
   });
 
-  const acceptCase = (caseId: string) => {
+  const handleResolveCase = (caseId: string) => {
     resolvedCaseMutation.mutate(caseId);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   };
 
   if (loading) {
@@ -58,11 +102,11 @@ const AgentActive: React.FC = () => {
           <FiAlertCircle className="mx-auto h-12 w-12 text-red-500" />
           <h3 className="mt-2 text-lg font-medium text-gray-900">{error}</h3>
           <div className="mt-6">
-            <button
+            <Button
               onClick={() => refetch()}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
               <FiRefreshCw className="mr-2" /> Retry
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -70,18 +114,19 @@ const AgentActive: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-lg overflow-hidden">
+      <div className="px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="mb-4 sm:mb-0">
           <h2 className="text-xl font-semibold text-gray-900">Active Cases</h2>
           <p className="mt-1 text-sm text-gray-500">Review and manage cases awaiting your action</p>
         </div>
         <div className="flex items-center space-x-2">
-          <button
+          <Button
             onClick={() => refetch()}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            variant="outline"
+            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             <FiRefreshCw className="mr-2" /> Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -94,111 +139,124 @@ const AgentActive: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <TableHeader>Customer</TableHeader>
-                <TableHeader>Issue</TableHeader>
-                <TableHeader>Department</TableHeader>
-                <TableHeader>Location</TableHeader>
-                <TableHeader>Agent</TableHeader>
-                <TableHeader>Date</TableHeader>
-                <TableHeader>Actions</TableHeader>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {activeCases.map(singleCase => (
-                <TableRow key={singleCase._id}>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <FiUser className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {singleCase.customerName}
-                        </div>
-                      </div>
-                    </div>
+        <div className="overflow-x-auto border border-[#E4E7EC] rounded-lg">
+          <Table className="w-full">
+            <TableHeader className="bg-gray-50">
+              <TableRow className="border-b border-gray-100">
+                <TableHead className="text-left px-6 py-3 text-sm font-medium text-[#64748B]">
+                  Customer
+                </TableHead>
+                <TableHead className="text-left px-6 py-3 text-sm font-medium text-[#64748B]">
+                  Issue
+                </TableHead>
+                <TableHead className="text-left px-6 py-3 text-sm font-medium text-[#64748B]">
+                  Department
+                </TableHead>
+                <TableHead className="text-left px-6 py-3 text-sm font-medium text-[#64748B] text-right">
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {activeCases.map((singleCase: Case) => (
+                <TableRow
+                  key={singleCase._id}
+                  className="text-gray-700 border-b border-gray-100 last:border-b-0">
+                  <TableCell className="px-6 py-4 text-sm font-normal">
+                    {singleCase.customerName}
                   </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-gray-900 max-w-xs truncate">
-                      {singleCase.issue}
-                    </div>
+                  <TableCell className="px-6 py-4 text-sm font-normal">
+                    {singleCase.issue}
                   </TableCell>
-                  <TableCell>
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {singleCase.department}
-                    </span>
+                  <TableCell className="px-6 py-4 text-sm font-normal">
+                    {singleCase.department}
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <FiMapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-500">{singleCase.location}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      {!singleCase.assignedAgent ? (
-                        <span className="text-sm text-gray-500">Not Assigned</span>
-                      ) : (
-                        <>
-                          <FaUserTie className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">
-                            {singleCase.assignedAgent?.fullname}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-gray-500">{formatDate(singleCase.createdAt)}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <button
-                        className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        onClick={() => acceptCase(singleCase._id)}
-                        disabled={resolvedCaseMutation.isPending}>
-                        {resolvedCaseMutation.isPending &&
-                        resolvedCaseMutation.variables === singleCase._id ? (
-                          <FiRefreshCw className="mr-1 animate-spin" />
-                        ) : (
-                          <FiCheck className="mr-1" />
+                  <TableCell className="px-6 py-4 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <FiMoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate(`/agent/active/${singleCase._id}`, {
+                              state: { caseData: singleCase },
+                            })
+                          }
+                          className="cursor-pointer">
+                          <FiInfo className="mr-2 h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+
+                        {singleCase.status.toLowerCase() !== 'resolved' && (
+                          <Dialog
+                            open={openDialogId === singleCase._id}
+                            onOpenChange={isOpen =>
+                              setOpenDialogId(isOpen ? singleCase._id : null)
+                            }>
+                            <DialogTrigger asChild>
+                              <DropdownMenuItem
+                                onSelect={e => e.preventDefault()}
+                                className="text-green-600 focus:text-green-700 cursor-pointer"
+                                disabled={
+                                  resolvedCaseMutation.isPending &&
+                                  resolvedCaseMutation.variables === singleCase._id
+                                }>
+                                {resolvedCaseMutation.isPending &&
+                                resolvedCaseMutation.variables === singleCase._id ? (
+                                  <FiRefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                  <FiCheck className="mr-2 h-4 w-4" />
+                                )}
+                                Resolve Case
+                              </DropdownMenuItem>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Confirm Case Resolution</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to mark this case as resolved? This action
+                                  cannot be undone.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => setOpenDialogId(null)}
+                                  disabled={resolvedCaseMutation.isPending}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="submit"
+                                  onClick={() => handleResolveCase(singleCase._id)}
+                                  disabled={resolvedCaseMutation.isPending}
+                                  className="bg-green-600 hover:bg-green-700">
+                                  {resolvedCaseMutation.isPending &&
+                                  resolvedCaseMutation.variables === singleCase._id ? (
+                                    <FiRefreshCw className="mr-1 animate-spin" />
+                                  ) : (
+                                    <FiCheck className="mr-1" />
+                                  )}
+                                  Confirm Resolve
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         )}
-                        Resolved
-                      </button>
-                    </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>
   );
 };
-
-// Reusable table components
-const TableHeader: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <th
-    scope="col"
-    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-    {children}
-  </th>
-);
-
-const TableRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <tr className="hover:bg-gray-50">{children}</tr>
-);
-
-const TableCell: React.FC<{
-  children: React.ReactNode;
-  className?: string;
-}> = ({ children, className = '' }) => (
-  <td className={`px-6 py-4 whitespace-nowrap ${className}`}>{children}</td>
-);
 
 export default AgentActive;
