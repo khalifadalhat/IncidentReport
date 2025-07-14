@@ -92,12 +92,14 @@ const CustomerRegistration: React.FC = () => {
       });
 
       setTimeout(() => {
-        window.location.href = '/customer-dashboard';
+        window.location.href = '/customer';
       }, 2000);
     } catch (error: any) {
       console.error('Registration error:', error);
       const errorMessage =
-        error.response?.data?.msg ?? error.response?.data?.error ?? 'Registration failed. Please try again.';
+        error.response?.data?.msg ??
+        error.response?.data?.error ??
+        'Registration failed. Please try again.';
       showMessage(errorMessage, 'error');
     } finally {
       setLoading(false);
@@ -151,8 +153,7 @@ const CustomerRegistration: React.FC = () => {
                   messageType === 'success'
                     ? 'bg-green-100 text-green-700'
                     : 'bg-red-100 text-red-700'
-                }`}
-              >
+                }`}>
                 {message}
               </div>
             )}
@@ -230,8 +231,7 @@ const CustomerRegistration: React.FC = () => {
                     value={formData.gender}
                     onChange={handleChange}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition appearance-none bg-white"
-                    disabled={loading}
-                  >
+                    disabled={loading}>
                     <option value="">Gender (Optional)</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -251,7 +251,7 @@ const CustomerRegistration: React.FC = () => {
                     <FiLock className="text-gray-400" />
                   </div>
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
@@ -262,8 +262,7 @@ const CustomerRegistration: React.FC = () => {
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
+                    onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? (
                       <FiEyeOff className="text-gray-400 hover:text-gray-600" />
                     ) : (
@@ -277,7 +276,7 @@ const CustomerRegistration: React.FC = () => {
                     <FiLock className="text-gray-400" />
                   </div>
                   <input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     value={formData.confirmPassword}
                     onChange={handleChange}
@@ -288,8 +287,7 @@ const CustomerRegistration: React.FC = () => {
                   <button
                     type="button"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                     {showConfirmPassword ? (
                       <FiEyeOff className="text-gray-400 hover:text-gray-600" />
                     ) : (
@@ -310,13 +308,25 @@ const CustomerRegistration: React.FC = () => {
                   loading
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-                }`}
-              >
+                }`}>
                 {loading ? (
                   <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Creating Account...
                   </span>

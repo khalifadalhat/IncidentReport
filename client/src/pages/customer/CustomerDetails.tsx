@@ -10,6 +10,8 @@ const CustomerDetails: React.FC = () => {
   const { customer, setCustomer } = useCustomerStore();
   useFetchCustomerProfile();
 
+  console.log(customer);
+
   const handleContinue = () => {
     navigate('/customer/department');
   };
