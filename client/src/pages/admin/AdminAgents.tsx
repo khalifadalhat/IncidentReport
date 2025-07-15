@@ -176,12 +176,12 @@ const AdminAgents: React.FC = () => {
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-black text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Agent
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] bg-white">
               <DialogHeader>
                 <DialogTitle>Create New Agent</DialogTitle>
                 <DialogDescription>
@@ -253,7 +253,7 @@ const AdminAgents: React.FC = () => {
                 <Button
                   onClick={handleCreateAgent}
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-700">
+                  className="bg-black text-white">
                   {loading ? 'Creating...' : 'Create Agent'}
                 </Button>
               </DialogFooter>
@@ -290,7 +290,7 @@ const AdminAgents: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
+            <div className="rounded-md border border-gray-300">
               <Table>
                 <TableHeader>
                   <TableRow>
