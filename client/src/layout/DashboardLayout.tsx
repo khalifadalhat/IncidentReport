@@ -39,7 +39,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
           <div className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 border border-gray-900 rounded-lg flex items-center justify-center">
                   <img src={Logo} className="w-6 h-6" alt="logo" />
                 </div>
                 <div>
@@ -68,7 +68,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
       <aside className="hidden md:block w-64">
         <div className="p-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 border border-gray-900 rounded-lg flex items-center justify-center">
               <img src={Logo} className="w-6 h-6" alt="logo" />
             </div>
             <div>
