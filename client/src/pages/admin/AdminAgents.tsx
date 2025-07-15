@@ -1,12 +1,56 @@
 import React, { useEffect, useState } from 'react';
 import { IAgent } from '../../Types/Icase';
 import api from '../../utils/api';
+import { Plus, RotateCcw, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const AdminAgents: React.FC = () => {
   const [agents, setAgents] = useState<IAgent[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | ''>('');
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [newAgent, setNewAgent] = useState({
     fullname: '',
     email: '',
@@ -61,6 +105,7 @@ const AdminAgents: React.FC = () => {
         department: 'Funding Wallet',
         role: 'agent',
       });
+      setDialogOpen(false);
       showMessage(
         `Agent created successfully! Credentials have been sent to ${newAgent.email}`,
         'success'
@@ -75,10 +120,6 @@ const AdminAgents: React.FC = () => {
   };
 
   const handleDeleteAgent = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this agent?')) {
-      return;
-    }
-
     try {
       await api.delete(`/agents/${id}`);
       setAgents(agents.filter(agent => agent._id !== id));
@@ -90,10 +131,6 @@ const AdminAgents: React.FC = () => {
   };
 
   const handleResetPassword = async (id: string, email: string) => {
-    if (!window.confirm(`Reset password for agent with email: ${email}?`)) {
-      return;
-    }
-
     try {
       await api.post(`/agents/${id}/reset-password`);
       showMessage('Password reset successfully and sent via email', 'success');
@@ -103,147 +140,249 @@ const AdminAgents: React.FC = () => {
     }
   };
 
+  const getStatusBadge = (status: string) => {
+    if (status === 'active') {
+      return (
+        <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+          Active
+        </Badge>
+      );
+    }
+    return <Badge variant="destructive">Inactive</Badge>;
+  };
+
+  const getRoleBadge = (role: string) => {
+    if (role === 'supervisor') {
+      return (
+        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+          Supervisor
+        </Badge>
+      );
+    }
+    return <Badge variant="outline">Agent</Badge>;
+  };
+
   return (
-    <div className="bg-white min-h-screen">
-      <h2 className="text-4xl px-20 py-10 font-semibold mb-4 text-black">Manage Agents</h2>
-
-      {/* Message Display */}
-      {message && (
-        <div
-          className={`mx-20 mb-4 p-4 rounded ${
-            messageType === 'success'
-              ? 'bg-green-100 border border-green-400 text-green-700'
-              : 'bg-red-100 border border-red-400 text-red-700'
-          }`}>
-          {message}
-        </div>
-      )}
-
-      {/* Form Section */}
-      <div className="px-20 mb-6">
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h3 className="text-xl font-semibold mb-4 text-black">Create New Agent</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <input
-              type="text"
-              placeholder="Full Name *"
-              value={newAgent.fullname}
-              onChange={e => setNewAgent({ ...newAgent, fullname: e.target.value })}
-              className="border border-gray-300 p-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            />
-            <input
-              type="email"
-              placeholder="Email *"
-              value={newAgent.email}
-              onChange={e => setNewAgent({ ...newAgent, email: e.target.value })}
-              className="border border-gray-300 p-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            />
-            <select
-              value={newAgent.department}
-              onChange={e => setNewAgent({ ...newAgent, department: e.target.value })}
-              className="border border-gray-300 p-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}>
-              <option value="Funding Wallet">Funding Wallet</option>
-              <option value="Buying Airtime">Buying Airtime</option>
-              <option value="Buying Internet Data">Buying Internet Data</option>
-              <option value="E-commerce Section">E-commerce Section</option>
-              <option value="Fraud Related Problems">Fraud Related Problems</option>
-              <option value="General Services">General Services</option>
-            </select>
-            <select
-              value={newAgent.role}
-              onChange={e => setNewAgent({ ...newAgent, role: e.target.value })}
-              className="border border-gray-300 p-3 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}>
-              <option value="agent">Agent</option>
-              <option value="supervisor">Supervisor</option>
-            </select>
+    <div className="min-h-screen bg-gray-50/50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Manage Agents</h2>
+            <p className="text-gray-600 mt-1">Create and manage support agents</p>
           </div>
-          <button
-            onClick={handleCreateAgent}
-            disabled={loading}
-            className={`${
-              loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-            } text-white px-6 py-3 rounded-lg font-medium transition-colors`}>
-            {loading ? 'Creating...' : 'Create Agent'}
-          </button>
-          <p className="text-sm text-gray-600 mt-2">
-            * A secure password will be generated and sent to the agent's email
-          </p>
-        </div>
-      </div>
 
-      <hr className="mx-20 h-px my-8 bg-gray-300 border-0" />
-
-      {/* Agents Table */}
-      <div className="px-20">
-        <div className="overflow-x-auto shadow-lg rounded-lg">
-          <table className="w-full table-auto text-sm text-left text-gray-500">
-            <thead className="text-xs text-gray-700 uppercase bg-gray-100">
-              <tr>
-                <th className="px-6 py-4">Full Name</th>
-                <th className="px-6 py-4">Email</th>
-                <th className="px-6 py-4">Department</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agents.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                    No agents found. Create your first agent above.
-                  </td>
-                </tr>
-              ) : (
-                agents.map(agent => (
-                  <tr className="bg-white border-b hover:bg-gray-50" key={agent._id}>
-                    <td className="px-6 py-4 font-medium text-gray-900">{agent.fullname}</td>
-                    <td className="px-6 py-4 text-gray-900">{agent.email}</td>
-                    <td className="px-6 py-4 text-gray-900">{agent.department}</td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          agent.role === 'supervisor'
-                            ? 'bg-purple-100 text-purple-800'
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {agent.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          agent.status === 'active'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                        {agent.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleResetPassword(agent._id, agent.email)}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                          Reset Password
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAgent(agent._id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Agent
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Create New Agent</DialogTitle>
+                <DialogDescription>
+                  Add a new agent to your support team. A secure password will be generated and sent
+                  to their email.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="fullname">Full Name *</Label>
+                  <Input
+                    id="fullname"
+                    placeholder="Enter full name"
+                    value={newAgent.fullname}
+                    onChange={e => setNewAgent({ ...newAgent, fullname: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter email address"
+                    value={newAgent.email}
+                    onChange={e => setNewAgent({ ...newAgent, email: e.target.value })}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select
+                    value={newAgent.department}
+                    onValueChange={value => setNewAgent({ ...newAgent, department: value })}
+                    disabled={loading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Funding Wallet">Funding Wallet</SelectItem>
+                      <SelectItem value="Buying Airtime">Buying Airtime</SelectItem>
+                      <SelectItem value="Buying Internet Data">Buying Internet Data</SelectItem>
+                      <SelectItem value="E-commerce Section">E-commerce Section</SelectItem>
+                      <SelectItem value="Fraud Related Problems">Fraud Related Problems</SelectItem>
+                      <SelectItem value="General Services">General Services</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={newAgent.role}
+                    onValueChange={value => setNewAgent({ ...newAgent, role: value })}
+                    disabled={loading}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agent">Agent</SelectItem>
+                      <SelectItem value="supervisor">Supervisor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={loading}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateAgent}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700">
+                  {loading ? 'Creating...' : 'Create Agent'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
+
+        {/* Message Display */}
+        {message && (
+          <Alert
+            className={
+              messageType === 'success'
+                ? 'border-green-200 bg-green-50'
+                : 'border-red-200 bg-red-50'
+            }>
+            {messageType === 'success' ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription
+              className={messageType === 'success' ? 'text-green-800' : 'text-red-800'}>
+              {message}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Agents Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Agents</CardTitle>
+            <CardDescription>
+              Manage your support team members and their permissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Full Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {agents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        No agents found. Create your first agent above.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    agents.map(agent => (
+                      <TableRow key={agent._id}>
+                        <TableCell className="font-medium">{agent.fullname}</TableCell>
+                        <TableCell className="text-gray-600">{agent.email}</TableCell>
+                        <TableCell className="text-gray-600">{agent.department}</TableCell>
+                        <TableCell>{getRoleBadge(agent.role)}</TableCell>
+                        <TableCell>{getStatusBadge(agent.status)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <RotateCcw className="h-4 w-4 mr-1" />
+                                  Reset
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reset Password</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to reset the password for{' '}
+                                    <strong>{agent.email}</strong>? A new password will be generated
+                                    and sent to their email.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleResetPassword(agent._id, agent.email)}
+                                    className="bg-yellow-600 hover:bg-yellow-700">
+                                    Reset Password
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700">
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete{' '}
+                                    <strong>{agent.fullname}</strong>? This action cannot be undone
+                                    and will remove all associated data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteAgent(agent._id)}
+                                    className="bg-red-600 hover:bg-red-700">
+                                    Delete Agent
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
