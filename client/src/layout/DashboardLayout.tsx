@@ -22,7 +22,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       {/* Mobile header */}
-      <header className="md:hidden flex items-center justify-between p-4 text-white">
+      <header className="md:hidden flex items-center justify-between p-4 bg-gray-800 text-white">
         <div className="flex items-center">
           <h1 className="text-xl font-semibold">{title}</h1>
         </div>
@@ -35,15 +35,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
 
       {/* Mobile Sidebar */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-opacity-75">
+        <div className="md:hidden fixed inset-0 z-40 bg-gray-800 bg-opacity-75">
           <div className="fixed inset-y-0 left-0 w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 border border-gray-900 rounded-lg flex items-center justify-center">
-                  <img src={Logo} className="w-6 h-6" alt="logo" />
+                <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <img src={Logo} className="w-6 h-6 brightness-0 invert" alt="logo" />
                 </div>
                 <div>
-                  <h2 className="text-gray-700 font-bold text-lg">{title}</h2>
+                  <h2 className="text-white font-bold text-lg">{title}</h2>
                   <p className="text-slate-400 text-sm">{subtitle}</p>
                 </div>
               </div>
@@ -68,8 +68,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
       <aside className="hidden md:block w-64">
         <div className="p-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 border border-gray-900 rounded-lg flex items-center justify-center">
-              <img src={Logo} className="w-6 h-6" alt="logo" />
+            <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+              <img src={Logo} className="w-6 h-6 brightness-0 invert" alt="logo" />
             </div>
             <div>
               <h2 className="text-gray-700 font-bold text-lg">{title}</h2>
