@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { FiMenu, FiX } from 'react-icons/fi';
-import { LayoutDashboard } from 'lucide-react';
 import { MenuItem } from '../Types/Icase';
 import Logo from '../assets/support.png';
 
@@ -41,7 +40,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <img src={Logo} className="w-8 h-8" alt="logo" />
+                  <img src={Logo} className="w-6 h-6" alt="logo" />
                 </div>
                 <div>
                   <h2 className="text-white font-bold text-lg">{title}</h2>
@@ -70,7 +69,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
         <div className="p-6">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-              <LayoutDashboard className="w-6 h-6 text-white" />
+              <img src={Logo} className="w-6 h-6" alt="logo" />
             </div>
             <div>
               <h2 className="text-gray-700 font-bold text-lg">{title}</h2>
