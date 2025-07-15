@@ -43,7 +43,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
                   <img src={Logo} className="w-6 h-6" alt="logo" />
                 </div>
                 <div>
-                  <h2 className="text-white font-bold text-lg">{title}</h2>
+                  <h2 className="text-gray-700 font-bold text-lg">{title}</h2>
                   <p className="text-slate-400 text-sm">{subtitle}</p>
                 </div>
               </div>
