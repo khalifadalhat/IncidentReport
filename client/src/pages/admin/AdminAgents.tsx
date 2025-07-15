@@ -110,9 +110,11 @@ const AdminAgents: React.FC = () => {
         `Agent created successfully! Credentials have been sent to ${newAgent.email}`,
         'success'
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('There was an error creating the agent!', error);
-      const errorMessage = error.response?.data?.error || 'Error creating agent';
+      const errorMessage =
+        (error as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+        'Error creating agent';
       showMessage(errorMessage, 'error');
     } finally {
       setLoading(false);
@@ -130,7 +132,7 @@ const AdminAgents: React.FC = () => {
     }
   };
 
-  const handleResetPassword = async (id: string, email: string) => {
+  const handleResetPassword = async (id: string) => {
     try {
       await api.post(`/agents/${id}/reset-password`);
       showMessage('Password reset successfully and sent via email', 'success');
@@ -336,7 +338,7 @@ const AdminAgents: React.FC = () => {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => handleResetPassword(agent._id, agent.email)}
+                                    onClick={() => handleResetPassword(agent._id)}
                                     className="bg-yellow-600 hover:bg-yellow-700">
                                     Reset Password
                                   </AlertDialogAction>
