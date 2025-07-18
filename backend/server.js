@@ -108,6 +108,8 @@ io.use(async (socket, next) => {
 io.on('connection', socket => {
   console.log(`User connected: ${socket.user.userId}`);
 
+  socket.join(socket.user.userId);
+
   socket.on('joinCase', async caseId => {
     try {
       const hasAccess = await verifyCaseAccess(socket.user.userId, caseId);
