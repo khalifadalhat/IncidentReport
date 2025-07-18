@@ -217,15 +217,25 @@ exports.getCasesByAgentId = async (req, res) => {
 exports.getCaseMessages = async (req, res) => {
   try {
     const { caseId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (page - 1) * limit;
 
-    const messages = await Message.find({ case: caseId }).sort({
-      timestamp: 1,
-    });
+    const messages = await Message.find({ case: caseId })
+      .sort({
+        timestamp: 1,
+      })
+      .skip(skip)
+      .limit(parseInt(limit));
+    const totalMessages = await Message.countDocuments({ case: caseId });
 
     res.status(200).json({
       success: true,
-      count: messages.length,
-      messages,
+      messages: messages.reverse(),
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalMessages / limit),
+        totalMessages,
+      },
     });
   } catch (err) {
     console.error('Error fetching case messages:', err);

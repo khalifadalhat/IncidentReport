@@ -19,4 +19,6 @@ router.put('/cases/status/:caseId', authMiddleware(), caseController.updateCaseS
 
 router.get('/cases/agent/:agentId', authMiddleware(), caseController.getCasesByAgentId);
 
+router.get('/cases/:caseId/messages', authMiddleware(), caseController.getCaseMessages);
+
 module.exports = router;
