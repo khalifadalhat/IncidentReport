@@ -11,44 +11,55 @@ import {
   FiTrendingUp,
   FiGlobe,
   FiAward,
+  FiMenu,
+  FiLinkedin,
+  FiGithub,
+  FiTwitter,
 } from "react-icons/fi";
+import { useState } from "react";
 
 const LandingPage = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-200/60 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
+            {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
                 <FiAlertTriangle className="text-white text-lg" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-                IncidentFlow
+                IncidentReport
               </span>
             </div>
+
+            {/* Desktop Menu - Hidden on mobile */}
             <div className="hidden md:flex items-center gap-8">
               <Link
-                to="/features"
+                to="#"
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Features
               </Link>
               <Link
-                to="/pricing"
+                to="#"
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Pricing
               </Link>
               <Link
-                to="/enterprise"
+                to="#"
                 className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
               >
                 Enterprise
               </Link>
             </div>
-            <div className="flex items-center gap-4">
+
+            {/* Desktop Buttons - Hidden on mobile */}
+            <div className="hidden md:flex items-center gap-4">
               <Link
                 to="/login"
                 className="px-6 py-2.5 text-gray-700 font-medium hover:text-blue-600 transition-colors"
@@ -62,7 +73,59 @@ const LandingPage = () => {
                 Get Started
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2"
+            >
+              <FiMenu className="w-6 h-6 text-gray-700" />
+            </button>
           </div>
+
+          {/* Mobile Menu Dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+              <div className="flex flex-col space-y-4">
+                <Link
+                  to="#"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Features
+                </Link>
+                <Link
+                  to="#"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Pricing
+                </Link>
+                <Link
+                  to="#"
+                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Enterprise
+                </Link>
+                <div className="h-px bg-gray-200 my-2"></div>
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-blue-600 font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium rounded-xl text-center hover:shadow-lg transform hover:scale-105 transition-all duration-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -98,7 +161,7 @@ const LandingPage = () => {
                 <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                to="/demo"
+                to="#"
                 className="px-12 py-5 bg-white text-gray-900 border-2 border-gray-300 rounded-2xl text-lg font-semibold hover:border-blue-500 hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-3"
               >
                 <FiPlay className="w-5 h-5" />
@@ -233,18 +296,18 @@ const LandingPage = () => {
                 Ready to Transform Your Incident Management?
               </h2>
               <p className="text-xl mb-10 opacity-90 max-w-2xl mx-auto">
-                Join thousands of teams that trust IncidentFlow for their
+                Join thousands of teams that trust Incident Report for their
                 critical incident reporting needs.
               </p>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Link
-                  to="/signup/customer"
+                  to="/signup"
                   className="px-12 py-5 bg-white text-blue-700 rounded-2xl text-lg font-bold hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105"
                 >
                   Start Free Trial
                 </Link>
                 <Link
-                  to="/contact"
+                  to="#"
                   className="px-12 py-5 border-2 border-white text-white rounded-2xl text-lg font-bold hover:bg-white hover:bg-opacity-20 transition-all duration-300"
                 >
                   Contact Sales
@@ -262,22 +325,63 @@ const LandingPage = () => {
       <footer className="py-16 px-6 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
+            {/* Brand Column */}
             <div>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center">
                   <FiAlertTriangle className="text-white text-lg" />
                 </div>
-                <span className="text-2xl font-bold">IncidentFlow</span>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+                  Incident Report
+                </span>
               </div>
-              <p className="text-gray-400 mb-6">
+              <p className="text-gray-400 mb-6 leading-relaxed">
                 Modern incident reporting and management platform for teams of
                 all sizes.
               </p>
+
+              {/* Social Icons */}
               <div className="flex gap-4">
-                {/* Social icons would go here */}
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                  aria-label="Twitter"
+                >
+                  <FiTwitter className="w-5 h-5" />
+                </a>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                  aria-label="GitHub"
+                >
+                  <FiGithub className="w-5 h-5" />
+                </a>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-blue-700 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                  aria-label="LinkedIn"
+                >
+                  <FiLinkedin className="w-5 h-5" />
+                </a>
+                <a
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg bg-gray-800 hover:bg-indigo-600 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                  aria-label="Website"
+                >
+                  <FiGlobe className="w-5 h-5" />
+                </a>
               </div>
             </div>
 
+            {/* Footer Columns */}
             {[
               {
                 title: "Product",
@@ -298,13 +402,15 @@ const LandingPage = () => {
               },
             ].map((column, index) => (
               <div key={index}>
-                <h4 className="font-semibold mb-4">{column.title}</h4>
+                <h4 className="font-semibold mb-4 text-white">
+                  {column.title}
+                </h4>
                 <ul className="space-y-3">
                   {column.links.map((link, linkIndex) => (
                     <li key={linkIndex}>
                       <Link
-                        to={`/${link.toLowerCase()}`}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        to={`#`}
+                        className="text-gray-400 hover:text-white transition-colors duration-200"
                       >
                         {link}
                       </Link>
@@ -315,10 +421,22 @@ const LandingPage = () => {
             ))}
           </div>
 
-          <div className="pt-8 border-t border-gray-800 text-center text-gray-400">
+          {/* Bottom Bar */}
+          <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-gray-400 text-sm">
             <p>
-              © {new Date().getFullYear()} IncidentFlow. All rights reserved.
+              © {new Date().getFullYear()} Incident Report. All rights reserved.
             </p>
+            <div className="flex gap-6">
+              <Link
+                to="#"
+                className="hover:text-white transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link to="#" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
@@ -326,7 +444,6 @@ const LandingPage = () => {
   );
 };
 
-// Add the missing FiPlay icon component
 const FiPlay = ({ className }: { className?: string }) => (
   <svg
     className={className}
