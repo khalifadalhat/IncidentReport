@@ -36,7 +36,19 @@ export interface Case {
   status: string;
   createdAt: string;
   updatedAt?: string;
+  assignedAgent?: string | {
+    _id: string;
+    fullname: string;
+    email?: string;
+  };
+  resolvedAt?: string;
+  agent?: string; // Computed property for agent name
+  imageUrl?: string;
+  priority?: "low" | "medium" | "high" | "urgent";
 }
+
+// Export alias for backward compatibility
+export type ICase = Case;
 
 
 export interface ICustomer {
