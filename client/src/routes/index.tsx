@@ -54,7 +54,7 @@ export const router = createBrowserRouter([
             layout={true}
             menuItems={adminMenuItems}
             title="Admin Dashboard"
-            subtitle="Incident Report Management"
+            subtitle="Incident Report"
           />
         ),
         children: [
@@ -74,7 +74,7 @@ export const router = createBrowserRouter([
             layout={true}
             menuItems={agentMenuItems}
             title="Agent Dashboard"
-            subtitle="Incident Report Management"
+            subtitle="Incident Report"
           />
         ),
         children: [
