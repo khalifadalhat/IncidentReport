@@ -101,7 +101,7 @@ const AdminDashboard = () => {
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["adminDashboard"],
     queryFn: async (): Promise<DashboardStats> => {
-      const { data } = await api.get("/api/admin/dashboard");
+      const { data } = await api.get("/admin/dashboard");
       return data.stats;
     },
   });
