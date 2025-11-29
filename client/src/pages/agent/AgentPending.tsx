@@ -31,11 +31,11 @@ const AgentPending = () => {
   const { data: cases = [], isLoading } = useQuery<Case[]>({
     queryKey: ["pendingCases"],
     queryFn: (): Promise<Case[]> =>
-      api.get("/api/cases/my?status=pending").then((res) => res.data.cases),
+      api.get("/cases/my?status=pending").then((res) => res.data.cases),
   });
 
   const acceptMutation = useMutation({
-    mutationFn: (caseId: string) => api.patch(`/api/cases/${caseId}/accept`),
+    mutationFn: (caseId: string) => api.patch(`/cases/${caseId}/accept`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingCases"] });
       toast.success("Case accepted successfully!");
@@ -49,7 +49,7 @@ const AgentPending = () => {
 
   const rejectMutation = useMutation({
     mutationFn: (caseId: string) =>
-      api.patch(`/api/cases/${caseId}/status`, { status: "rejected" }),
+      api.patch(`/cases/${caseId}/status`, { status: "rejected" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pendingCases"] });
       toast.success("Case rejected");
