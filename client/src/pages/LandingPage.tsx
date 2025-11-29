@@ -56,7 +56,7 @@ const LandingPage = () => {
                 Sign In
               </Link>
               <Link
-                to="/signup/customer"
+                to="/signup"
                 className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300"
               >
                 Get Started
@@ -91,7 +91,7 @@ const LandingPage = () => {
 
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
               <Link
-                to="/signup/customer"
+                to="/signup"
                 className="group px-12 py-5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-lg font-semibold rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3"
               >
                 Start Free Trial
