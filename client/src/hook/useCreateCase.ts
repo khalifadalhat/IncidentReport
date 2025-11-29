@@ -11,7 +11,7 @@ export const useCreateCase = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const res = await api.post('/api/cases', {
+      const res = await api.post('/cases', {
         issue: problemDescription,
         department: selectedDepartment,
         location: 'Online',
