@@ -137,7 +137,7 @@ const AdminSettings = () => {
     },
   });
 
-  const { data: agents = [], isLoading: loadingAgents } = useQuery<User[]>({
+  const { data: _agents = [], isLoading: loadingAgents } = useQuery<User[]>({
     queryKey: ["allAgents"],
     queryFn: async () => {
       const response = await api.get("/api/users/agents");
@@ -772,7 +772,7 @@ const AdminSettings = () => {
 
 const Modal = ({
   children,
-  onClose,
+  onClose: _onClose,
   title,
   color = "black",
 }: {
