@@ -1,1 +1,16 @@
-{}
+{
+  "name": "incidentflow",
+  "version": "1.0.0",
+  "description": "Real-Time Customer Support Platform",
+  "private": true,
+  "scripts": {
+    "build": "cd client && npm install && npm run build",
+    "install:client": "cd client && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:client && npm run install:backend"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
