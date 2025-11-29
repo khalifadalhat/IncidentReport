@@ -10,7 +10,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       login(email, password),
-    onSuccess: (_, variables) => {
+    onSuccess: () => {
       const role = useAuthStore.getState().user?.role;
       if (role === "customer") navigate("/customer");
       else if (role === "agent") navigate("/agent");
