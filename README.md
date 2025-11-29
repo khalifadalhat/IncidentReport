@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🚀 IncidentFlow - Real-Time Customer Support Platform
+# 🚀 Incident Report - Real-Time Incident Management Platform
 
-**A modern, full-stack incident management and customer support system built with cutting-edge technologies**
+**A comprehensive, real-time incident reporting and management platform for law enforcement agencies, emergency response teams, and community safety initiatives**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
@@ -16,11 +16,34 @@
 
 ---
 
-## ✨ What Makes This Special?
+## 🌟 Overview
 
-**IncidentFlow** is not just another support platform—it's a **production-ready, enterprise-grade solution** that combines real-time communication, intelligent case routing, and comprehensive analytics into one seamless experience. Whether you're handling customer support, incident reports, or emergency response, this platform scales with your needs.
+**Incident Report** is a comprehensive, real-time incident reporting and management platform designed specifically for law enforcement agencies, emergency response teams, and community safety initiatives. Built with modern web technologies, it streamlines the entire incident lifecycle from initial report to resolution.
 
-### 🌟 Why You'll Love This Project
+### 💡 Why Incident Report?
+
+- ⚡ **Real-time Communication** - Instant chat between citizens and law enforcement
+- 🔒 **Secure & Anonymous** - Report incidents with or without identification
+- 📱 **Mobile-First Design** - Works seamlessly on any device
+- 🎯 **Role-Based Access** - Specialized interfaces for different user types
+- 📊 **Analytics Dashboard** - Track response times and crime patterns
+- 🌐 **Multi-Department Support** - Coordinate across specialized units
+
+### 🎯 Problem Statement
+
+Traditional incident reporting systems are often:
+
+- ❌ Slow and bureaucratic
+- ❌ Lack real-time communication
+- ❌ Don't support anonymous reporting
+- ❌ Have poor mobile experiences
+- ❌ Provide limited tracking for citizens
+
+**Incident Report** solves these problems with a modern, user-friendly platform that prioritizes speed, security, and transparency.
+
+### ✨ What Makes This Special?
+
+**Incident Report** is a **production-ready, enterprise-grade solution** that combines real-time communication, intelligent case routing, and comprehensive analytics into one seamless experience. Whether you're handling customer support, incident reports, or emergency response, this platform scales with your needs.
 
 - ⚡ **Lightning-Fast Real-Time Communication** - Built on Socket.io for instant messaging
 - 🎯 **Smart Case Routing** - AI-ready architecture for intelligent agent assignment
@@ -33,7 +56,41 @@
 
 ---
 
-## 🎯 Features
+## ✨ Key Features
+
+### 👥 For Citizens/Customers
+
+- 📝 **Easy Reporting** - Submit incidents in under 2 minutes
+- 🕵️ **Anonymous Options** - Report without revealing identity
+- 💬 **Direct Communication** - Chat with assigned officers in real-time
+- 📍 **Location Tracking** - Automatic GPS location capture
+- 📎 **Evidence Upload** - Attach photos, videos, and documents
+- 🔔 **Status Notifications** - Get updates on your case progress
+- 📱 **Mobile App** - iOS and Android support (coming soon)
+
+### 👮 For Law Enforcement Agents
+
+- 🎯 **Smart Assignment** - Auto-routing to specialized departments
+- 📊 **Case Dashboard** - Manage all assigned incidents
+- 💬 **Multi-Channel Communication** - Chat, voice notes, file sharing
+- 🔍 **Investigation Tools** - Timeline tracking, evidence management
+- 🤝 **Collaboration** - Work with other departments seamlessly
+- 📈 **Performance Metrics** - Track response times and resolution rates
+- 🔔 **Real-time Alerts** - Instant notifications for urgent cases
+
+### 👔 For Supervisors & Admins
+
+- 📊 **Analytics Dashboard** - Comprehensive reporting and insights
+- 👥 **Agent Management** - Create, assign, and monitor agents
+- 🏢 **Department Oversight** - Track workload distribution
+- 🎚️ **Priority Management** - Escalate critical incidents
+- 📈 **Trend Analysis** - Identify crime patterns and hotspots
+- ⚙️ **System Configuration** - Customize workflows and settings
+- 📋 **Audit Logs** - Complete activity tracking
+
+---
+
+## 🎯 Technical Features
 
 ### 💬 Real-Time Communication
 - **Live Chat System** - Instant messaging between customers and agents
@@ -126,8 +183,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/incidentflow.git
-   cd incidentflow
+   git clone https://github.com/khalifadalhat/IncidentReport.git
+   cd IncidentReport
    ```
 
 2. **Install dependencies**
@@ -149,7 +206,7 @@
    **Backend** (`backend/.env`):
    ```env
    # Database
-   MONGODB_URI=mongodb://localhost:27017/incidentflow
+   MONGODB_URI=mongodb://localhost:27017/incidentreport
    
    # JWT
    JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -177,7 +234,6 @@
    **Frontend** (`client/.env`):
    ```env
    VITE_API_URL=http://localhost:5000
-   VITE_SOCKET_URL=http://localhost:5000
    ```
 
 4. **Create Admin User** (Optional)
@@ -213,7 +269,7 @@
 ## 📁 Project Structure
 
 ```
-incidentflow/
+incidentreport/
 ├── client/                 # React + TypeScript Frontend
 │   ├── src/
 │   │   ├── components/    # Reusable UI components
@@ -262,31 +318,64 @@ http://localhost:5000/api-docs
 ### Key Endpoints
 
 #### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/me` - Get current user
+User login/register (Customer/Agent/Admin)
+
+- `POST /api/auth/login` - Login user (Customer/Agent/Admin)
+- `POST /api/auth/register` - Register new customer
+- `POST /api/auth/admin/create` - Register new Admin
 
 #### Cases
-- `GET /api/cases` - Get all cases (filtered by role)
-- `POST /api/cases` - Create new case
-- `GET /api/cases/:id` - Get case details
-- `PUT /api/cases/:id` - Update case
-- `PATCH /api/cases/:id/assign` - Assign case to agent
+Support cases/tickets management
+
+- `POST /api/cases` - Create new case (Customer only)
+- `GET /api/cases` - Get all cases (Admin only)
+- `GET /api/cases/my` - Get my cases (Customer/Agent)
+- `PATCH /api/cases/{caseId}/accept` - Accept case (Agent only)
+- `PATCH /api/cases/{caseId}/status` - Update case status (Agent only)
+- `PATCH /api/cases/assign` - Assign case to agent (Admin only)
+
+#### Chat
+Chat history & unread counts
+
+- `GET /api/chat/history` - Get chat history (Customer/Agent)
+- `GET /api/chat/case/{caseId}` - Get case chat (Customer/Agent)
+- **Note:** Real-time messaging is handled via Socket.io (preferred method)
 
 #### Messages
-- `GET /api/messages/:caseId` - Get messages for a case
-- `POST /api/messages` - Send message (also via Socket.io)
+HTTP fallback for messages (real-time via Socket.IO)
+
+- `GET /api/messages/case/{caseId}` - Get messages for case (fallback)
 
 #### Users
-- `GET /api/users` - Get all users (admin only)
-- `GET /api/users/:id` - Get user details
-- `PUT /api/users/:id` - Update user
+Profile management & agent creation (Admin/Supervisor only)
+
+- `GET /api/users/profile` - Get current user profile
+- `PATCH /api/users/profile` - Update user profile
+- `POST /api/users/agents` - Create new agent (Admin/Supervisor only)
+- `GET /api/users/agents` - Get all agents (Admin/Supervisor only)
 
 #### Admin
-- `GET /api/admin/stats` - Dashboard statistics
-- `POST /api/admin/assign-case` - Assign case to agent
-- `GET /api/admin/analytics` - Analytics data
+Admin-only endpoints
+
+- `GET /api/admin/dashboard` - Get admin dashboard stats
+- `GET /api/admin/users` - Get all users (Admin only)
+- `GET /api/admin/cases` - Get all cases (Admin only)
+- `DELETE /api/admin/users/{userId}` - Delete user (Admin only)
+
+> **Note:** Additional admin endpoints like `/api/admin/performance` may be available but are not documented in the Swagger API.
+
+#### Notifications
+User-specific notifications and status updates
+
+- `GET /api/notifications` - Get a list of the user's notifications
+- `GET /api/notifications/unread-count` - Get the total count of unread notifications for the user
+- `PATCH /api/notifications/{id}/read` - Mark a specific notification as read
+- `PATCH /api/notifications/mark-all-read` - Mark all unread notifications for the current user as read
+- `DELETE /api/notifications/{id}` - Delete a specific notification by ID
+- `DELETE /api/notifications/clear-read` - Delete all notifications that have been read by the current user
+
+#### Uploads
+- `POST /upload` - Upload an image to Cloudinary
 
 ---
 
@@ -429,9 +518,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📧 Contact & Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/incidentflow/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/incidentflow/discussions)
-- **Email**: your-email@example.com
+- **Issues**: [GitHub Issues](https://github.com/khalifadalhat/IncidentReport/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/khalifadalhat/IncidentReport/discussions)
 
 ---
 
@@ -445,7 +533,7 @@ If you find this project helpful, please consider giving it a ⭐ on GitHub! It 
 
 **Built with ❤️ by Dalhat Dalhat falalu**
 
-[⬆ Back to Top](#-incidentflow---real-time-customer-support-platform)
+[⬆ Back to Top](#-incident-report---real-time-customer-support-platform)
 
 </div>
 
