@@ -1,18 +1,48 @@
-const express = require('express');
-const router = express.Router();
-const messageController = require('../controllers/messageController');
-const authMiddleware = require('../middleware/authMiddleware');
+const router = require("express").Router();
+const { auth } = require("../middleware/auth");
 
-// Send message to a case
-router.post('/messages', authMiddleware(), messageController.sendMessage);
+/**
+ * @swagger
+ * tags:
+ *   name: Messages
+ *   description: HTTP fallback for messages (real-time via Socket.IO)
+ */
 
-// Get all messages for a specific case
-router.get('/cases/:caseId/messages', authMiddleware(), messageController.getMessages);
+/**
+ * @swagger
+ * /api/messages/case/{caseId}:
+ *   get:
+ *     summary: Get messages for case (fallback)
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: caseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Messages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 messages:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Message'
+ */
 
-// Get initial messages (for socket.io connection)
-router.get('/messages/initial/:caseId', authMiddleware(), async (req, res) => {
-  const messages = await messageController.getInitialMessages(req.params.caseId);
-  res.json({ messages });
+router.get("/case/:caseId", auth, async (req, res) => {
+  const messages = await require("../models/Message")
+    .find({ case: req.params.caseId })
+    .sort({ timestamp: 1 });
+  res.json({ success: true, messages });
 });
 
 module.exports = router;
