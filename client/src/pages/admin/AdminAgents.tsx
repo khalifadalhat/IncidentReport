@@ -95,11 +95,11 @@ const AdminAgents = () => {
 
   const { data: agents = [], isLoading } = useQuery<Agent[]>({
     queryKey: ["agents"],
-    queryFn: () => api.get("/api/users/agents").then((res) => res.data.agents),
+    queryFn: () => api.get("/users/agents").then((res) => res.data.agents),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) => api.post("/api/users/agents", data),
+    mutationFn: (data: FormData) => api.post("/users/agents", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       toast.success("Agent created successfully! Welcome email sent.");
@@ -117,7 +117,7 @@ const AdminAgents = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/admin/users/${id}`),
+    mutationFn: (id: string) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       toast.success("Agent deleted successfully");
