@@ -16,6 +16,6 @@
 
 # Environment variables (if needed, set these in Netlify dashboard)
 # [build.environment]
-#   VITE_API_URL = "https://bizapp-tllq.onrender.com"
+#   VITE_API_URL = "https://your-api-url.com"
 # Note: Socket.io uses the same URL as the API (VITE_API_URL), so no separate VITE_SOCKET_URL is needed
 
