@@ -15,20 +15,7 @@ import { useAgentCasesStore } from "../../store/agent/useAgentCasesStore";
 import { useFetchAgentCases } from "../../hook/agent/useAgentCases";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-interface Case {
-  _id: string;
-  customerName: string;
-  issue: string;
-  department: string;
-  location: string;
-  assignedAgent?: {
-    fullname: string;
-  };
-  createdAt: string;
-  status: string;
-  priority?: "low" | "medium" | "high" | "urgent";
-}
+import { Case } from "../../Types/Icase";
 
 interface User {
   id: string;
