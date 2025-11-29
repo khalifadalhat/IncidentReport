@@ -22,7 +22,7 @@ export const useCreateCase = () => {
       setCaseId(newCase._id); 
       queryClient.invalidateQueries({ queryKey: ['myCases'] });
       reset();
-      navigate('/customer/chat');
+      navigate('/customer/cases');
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any) => {
