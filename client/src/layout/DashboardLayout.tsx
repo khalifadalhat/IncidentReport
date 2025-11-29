@@ -95,7 +95,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ menuItems, title, sub
   );
 };
 
-// Reusable NavItem component
 const NavItem: React.FC<{ item: MenuItem }> = ({ item }) => {
   const location = useLocation();
   const isActive = location.pathname === item.href;
