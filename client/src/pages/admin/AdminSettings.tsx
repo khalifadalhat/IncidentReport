@@ -132,7 +132,7 @@ const AdminSettings = () => {
   const { data: admin } = useQuery<User>({
     queryKey: ["adminProfile"],
     queryFn: async () => {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       return response.data.user;
     },
   });
@@ -140,7 +140,7 @@ const AdminSettings = () => {
   const { data: _agents = [], isLoading: loadingAgents } = useQuery<User[]>({
     queryKey: ["allAgents"],
     queryFn: async () => {
-      const response = await api.get("/api/users/agents");
+      const response = await api.get("/users/agents");
       return response.data.agents;
     },
   });
@@ -148,7 +148,7 @@ const AdminSettings = () => {
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery<User[]>({
     queryKey: ["allUsers"],
     queryFn: async () => {
-      const response = await api.get("/api/users/agents");
+      const response = await api.get("/users/agents");
       return response.data.agents;
     },
   });
@@ -168,7 +168,7 @@ const AdminSettings = () => {
   // Update profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await api.patch("/api/users/profile", data);
+      const response = await api.patch("/users/profile", data);
       return response.data;
     },
     onSuccess: () => {
@@ -186,7 +186,7 @@ const AdminSettings = () => {
       userId: string;
       data: Partial<UserEditFormData>;
     }) => {
-      const response = await api.patch(`/api/users/profile/${userId}`, data);
+      const response = await api.patch(`/users/profile/${userId}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -200,7 +200,7 @@ const AdminSettings = () => {
   // Create agent mutation
   const createAgentMutation = useMutation({
     mutationFn: async (data: CreateAgentFormData) => {
-      const response = await api.post("/api/users/agents", data);
+      const response = await api.post("/users/agents", data);
       return response.data;
     },
     onSuccess: () => {
@@ -217,7 +217,7 @@ const AdminSettings = () => {
       currentPassword: string;
       newPassword: string;
     }) => {
-      const response = await api.put("/api/users/change-password", data);
+      const response = await api.put("/users/change-password", data);
       return response.data;
     },
     onSuccess: () => {
