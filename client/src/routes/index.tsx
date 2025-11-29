@@ -1,181 +1,90 @@
-import { createBrowserRouter } from 'react-router-dom';
-import LandingPage from '../components/LandingPage';
-import Login from '../pages/Login';
-import CustomerRegistration from '../pages/customer/customerRegistration';
-import CustomerLogin from '../pages/customer/customerLogin';
-import CustomerDetails from '../pages/customer/CustomerDetails';
-import Departments from '../pages/customer/Departments';
-import ProblemType from '../pages/customer/ProblemType';
-import ChatWithAgent from '../pages/customer/ChatWithAgent';
+import { createBrowserRouter } from "react-router-dom";
+import CustomerRegistration from "../components/auth/customerRegistration";
+import Departments from "../pages/customer/Departments";
+import ProblemType from "../pages/customer/ProblemType";
+import ChatWithAgent from "../pages/customer/ChatWithAgent";
 
-import AdminDashboardContent from '../pages/admin/AdminDashboard';
-import AdminAgents from '../pages/admin/AdminAgents';
-import AdminCustomers from '../pages/admin/AdminCustomers';
-import AdminCases from '../pages/admin/AdminCases';
-import AdminMessages from '../pages/admin/AdminMessages';
-import AdminSettings from '../pages/admin/AdminSettings';
+import AdminDashboardContent from "../pages/admin/AdminDashboard";
+import AdminAgents from "../pages/admin/AdminAgents";
+import AdminCases from "../pages/admin/AdminCases";
+import AgentPending from "../pages/agent/AgentPending";
+import AgentChat from "../pages/agent/AgentChat";
 
-import AgentCases from '../pages/agent/AgentCases';
-import AgentPending from '../pages/agent/AgentPending';
-import AgentCustomers from '../pages/agent/AgentCustomers';
-import AgentChat from '../pages/agent/AgentChat';
-import AgentResolved from '../pages/agent/AgentResolved';
-import AgentSettings from '../pages/agent/AgentSettings';
+import { adminMenuItems, agentMenuItems } from "../config/menuConfig";
+import AgentActive from "../pages/agent/AgentActive";
+import ProtectedRoute from "@/components/ProtectedRoutes";
+import AgentCases from "@/pages/agent/AgentCases";
+import CustomerDetails from "@/pages/customer/CustomerDetails";
 
-import { AuthWrapper } from '../config/authWrapper';
-import DashboardLayout from '../layout/DashboardLayout';
-import { adminMenuItems, agentMenuItems } from '../config/menuConfig';
-import AgentActive from '../pages/agent/AgentActive';
-import PendingCaseDetails from '@/components/agent/PendingCasedetails';
-import AgentCaseDetails from '@/components/agent/AgentCaseDetails';
+import LandingPage from "@/pages/LandingPage";
+import Login from "@/components/auth/Login";
+import AdminCustomers from "@/pages/admin/AdminCustomers";
+import AgentDashboard from "@/pages/agent/AgentDashboard";
+import MyCases from "@/pages/customer/MyCases";
+import RootLayout from "@/components/RootLayout";
+import AgentSettings from "@/pages/agent/AgentSettings";
+import AdminSettings from "@/pages/admin/AdminSettings";
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    element: <LandingPage />,
-  },
-  {
-    path: '/login',
-    element: <Login />,
-  },
-  {
-    path: '/signup/customer',
-    element: <CustomerRegistration />,
-  },
-  {
-    path: '/signin/customer',
-    element: <CustomerLogin />,
-  },
-
-  {
-    path: '/customer',
-    element: (
-      <AuthWrapper
-        redirectPath="/signin/customer"
-        title="My Account"
-        subtitle="Customer Portal"
-        isCustomer={true}
-      />
-    ),
+    path: "/",
+    element: <RootLayout />,
     children: [
-      {
-        index: true,
-        element: <CustomerDetails />,
-      },
-      {
-        path: 'department',
-        element: <Departments />,
-      },
-      {
-        path: 'problem-type',
-        element: <ProblemType />,
-      },
-      {
-        path: 'chat-with-agent',
-        element: <ChatWithAgent />,
-      },
-    ],
-  },
+      { index: true, element: <LandingPage /> },
+      { path: "login", element: <Login /> },
+      { path: "signup", element: <CustomerRegistration /> },
 
-  {
-    path: '/admin',
-    element: (
-      <AuthWrapper
-        requiredRole="admin"
-        redirectPath="/login"
-        layout={DashboardLayout}
-        menuItems={adminMenuItems}
-        title="Admin Panel"
-        subtitle="Management System"
-      />
-    ),
-    children: [
       {
-        index: true,
-        element: <AdminDashboardContent />,
-      },
-      {
-        path: 'agents',
-        element: <AdminAgents />,
-      },
-      {
-        path: 'customers',
-        element: <AdminCustomers />,
-      },
-      {
-        path: 'cases',
-        element: <AdminCases />,
-      },
-      {
-        path: 'messages',
-        element: <AdminMessages />,
-      },
-      {
-        path: 'settings',
-        element: <AdminSettings />,
-      },
-    ],
-  },
-
-  {
-    path: '/agent',
-    element: (
-      <AuthWrapper
-        requiredRole="agent"
-        redirectPath="/login"
-        layout={DashboardLayout}
-        menuItems={agentMenuItems}
-        title="Agent Portal"
-        subtitle="Support System"
-      />
-    ),
-    children: [
-      {
-        index: true,
-        element: <AgentCases />,
-      },
-      {
-        path: 'active',
+        path: "customer",
+        element: <ProtectedRoute allowedRoles={["customer"]} />,
         children: [
-          {
-            index: true,
-            element: <AgentActive />,
-          },
-          {
-            path: ':caseId',
-            element: <AgentCaseDetails />,
-          },
+          { index: true, element: <CustomerDetails /> },
+          { path: "cases", element: <MyCases /> },
+          { path: "departments", element: <Departments /> },
+          { path: "problem-type", element: <ProblemType /> },
+          { path: "chat", element: <ChatWithAgent /> },
         ],
       },
-      {
-        path: 'pending',
 
+      {
+        path: "admin",
+        element: (
+          <ProtectedRoute
+            allowedRoles={["admin"]}
+            layout={true}
+            menuItems={adminMenuItems}
+            title="Admin Dashboard"
+            subtitle="Incident Report Management"
+          />
+        ),
         children: [
-          {
-            index: true,
-            element: <AgentPending />,
-          },
-          {
-            path: ':caseId',
-            element: <PendingCaseDetails />,
-          },
+          { index: true, element: <AdminDashboardContent /> },
+          { path: "agents", element: <AdminAgents /> },
+          { path: "cases", element: <AdminCases /> },
+          { path: "customers", element: <AdminCustomers /> },
+          { path: "settings", element: <AdminSettings /> },
         ],
       },
+
       {
-        path: 'customers',
-        element: <AgentCustomers />,
-      },
-      {
-        path: 'chat',
-        element: <AgentChat />,
-      },
-      {
-        path: 'resolved',
-        element: <AgentResolved />,
-      },
-      {
-        path: 'settings',
-        element: <AgentSettings />,
+        path: "agent",
+        element: (
+          <ProtectedRoute
+            allowedRoles={["agent"]}
+            layout={true}
+            menuItems={agentMenuItems}
+            title="Agent Dashboard"
+            subtitle="Incident Report Management"
+          />
+        ),
+        children: [
+          { index: true, element: <AgentDashboard /> },
+          { path: "cases", element: <AgentCases /> },
+          { path: "pending", element: <AgentPending /> },
+          { path: "active", element: <AgentActive /> },
+          { path: "chat", element: <AgentChat /> },
+          { path: "settings", element: <AgentSettings /> },
+        ],
       },
     ],
   },
