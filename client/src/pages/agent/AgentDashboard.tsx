@@ -58,9 +58,9 @@ const AgentDashboard = () => {
     queryKey: ["agentStats"],
     queryFn: async () => {
       const [pending, active, resolved] = await Promise.all([
-        api.get("/api/cases/my?status=pending"),
-        api.get("/api/cases/my?status=active"),
-        api.get("/api/cases/my?status=resolved"),
+        api.get("/cases/my?status=pending"),
+        api.get("/cases/my?status=active"),
+        api.get("/cases/my?status=resolved"),
       ]);
       return {
         pending: pending.data.cases.length,
