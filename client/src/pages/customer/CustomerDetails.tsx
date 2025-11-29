@@ -55,7 +55,7 @@ const CustomerDetails = () => {
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["userProfile"],
     queryFn: async () => {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       return response.data.user;
     },
   });
@@ -74,7 +74,7 @@ const CustomerDetails = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await api.patch("/api/users/profile", data);
+      const response = await api.patch("/users/profile", data);
       return response.data;
     },
     onSuccess: () => {
@@ -88,7 +88,7 @@ const CustomerDetails = () => {
     mutationFn: async (file: File) => {
       const imgData = new FormData();
       imgData.append("image", file);
-      const response = await api.post("/api/upload", imgData);
+      const response = await api.post("/upload", imgData);
       return response.data;
     },
   });
