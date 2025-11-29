@@ -1,332 +1,347 @@
-import React from 'react';
-import { Search, User, AlertCircle, MapPin, CheckCircle, Clock, Eye, X } from 'lucide-react';
-import { useAdminAssignCasesStore } from '../../store/admin/useAdminAssignCasesStore';
+import api from "@/utils/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  useAssignAgent,
-  useFetchAdminCases,
-  useFetchAgents,
-  useUpdateCaseStatus,
-} from '../../hook/admin/useAdminAssignCases';
+  FiUser,
+  FiClock,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiMessageSquare,
+} from "react-icons/fi";
+import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const AdminCases: React.FC = () => {
-  const {
-    cases,
-    agents,
-    loading,
-    message,
-    messageType,
-    searchTerm,
-    selectedCase,
-    setSearchTerm,
-    setSelectedCase,
-  } = useAdminAssignCasesStore();
+interface Case {
+  _id: string;
+  customerName: string;
+  issue: string;
+  department: string;
+  status: "active" | "pending" | "resolved" | "closed";
+  createdAt: string;
+  updatedAt?: string;
+  assignedAgent?: {
+    _id: string;
+    fullname: string;
+    email: string;
+    department: string;
+  } | null;
+  priority?: "low" | "medium" | "high" | "urgent";
+  location?: string;
+  customer?: string;
+}
 
-  // Fetch data
-  useFetchAdminCases();
-  useFetchAgents();
+interface Agent {
+  _id: string;
+  fullname: string;
+  email: string;
+  department: string;
+  status: string;
+}
 
-  // Mutations
-  const assignAgentMutation = useAssignAgent();
-  const updateStatusMutation = useUpdateCaseStatus();
+interface AssignAgentParams {
+  caseId: string;
+  agentId: string;
+}
 
-  const filteredCases = cases.filter(
-    caseItem =>
-      caseItem.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.issue.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (caseItem.agent &&
-        agents
-          .find(a => a._id === caseItem.agent)
-          ?.fullname.toLowerCase()
-          .includes(searchTerm.toLowerCase()))
-  );
+interface ApiResponse {
+  success: boolean;
+  users: Case[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    total: number;
+  };
+}
 
-  const getStatusColor = (status: string) => {
+interface AgentsApiResponse {
+  success: boolean;
+  agents: Agent[];
+}
+
+const AdminCases = () => {
+  const queryClient = useQueryClient();
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
+
+  const { data: casesData, isLoading: casesLoading } = useQuery<ApiResponse>({
+    queryKey: ["adminCases"],
+    queryFn: (): Promise<ApiResponse> =>
+      api.get("/api/cases").then((res) => res.data),
+  });
+
+  const { data: agentsData } = useQuery<AgentsApiResponse>({
+    queryKey: ["agents"],
+    queryFn: (): Promise<AgentsApiResponse> =>
+      api.get("/api/users/agents").then((res) => res.data),
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ caseId, agentId }: AssignAgentParams) =>
+      api.patch(`/api/cases/assign`, { agentId, caseId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminCases"] });
+    },
+  });
+
+  const getStatusStyles = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'closed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case "active":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "resolved":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "closed":
+        return "bg-gray-100 text-gray-800 border-gray-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'active':
-        return <AlertCircle className="w-3 h-3" />;
-      case 'closed':
-        return <CheckCircle className="w-3 h-3" />;
-      case 'pending':
-        return <Clock className="w-3 h-3" />;
+      case "active":
+        return <FiAlertCircle className="w-4 h-4" />;
+      case "pending":
+        return <FiClock className="w-4 h-4" />;
+      case "resolved":
+      case "closed":
+        return <FiCheckCircle className="w-4 h-4" />;
       default:
-        return <AlertCircle className="w-3 h-3" />;
+        return <FiMessageSquare className="w-4 h-4" />;
     }
   };
 
-  const handleAssignAgent = (caseId: string, agentId: string) => {
-    assignAgentMutation.mutate({ caseId, agentId });
+  const getPriorityStyles = (priority?: string) => {
+    switch (priority) {
+      case "urgent":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "high":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "low":
+        return "bg-green-100 text-green-800 border-green-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
   };
 
-  const handleChangeStatus = (caseId: string, status: string) => {
-    updateStatusMutation.mutate({ caseId, status });
-  };
+  const cases = casesData?.users || [];
+  const agents = agentsData?.agents || [];
 
-  // const getAgentName = (agentId: string) => {
-  //   const agent = agents.find(a => a._id === agentId);
-  //   return agent ? `${agent.fullname} (${agent.department})` : 'Unknown Agent';
-  // };
+  const filteredCases =
+    selectedDepartment === "all"
+      ? cases
+      : cases.filter((c) => c.department === selectedDepartment);
+
+  const departments = ["all", ...new Set(cases.map((c) => c.department))];
+
+  if (casesLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/50 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Manage Cases</h1>
-          <p className="text-gray-600">Assign agents and track case progress</p>
-        </div>
-
-        {/* Message Display */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg border ${
-              messageType === 'success'
-                ? 'border-green-200 bg-green-50 text-green-700'
-                : 'border-red-200 bg-red-50 text-red-700'
-            }`}>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              {message}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">
+                Case Management
+              </h1>
+              <p className="text-gray-600 text-lg">
+                Manage and assign support cases to your team
+              </p>
+            </div>
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border ">
+              <FiMessageSquare className="w-5 h-5 text-gray-400" />
+              <span className="text-sm font-medium text-gray-700">
+                {filteredCases.length} cases
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+        {/* Filters */}
+        <div className="bg-white rounded-2xl border border-gray-200 mb-6">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Search & Filter</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search cases by customer, issue, department or agent..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Cases Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Cases ({filteredCases.length})
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Customer</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Issue</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Department</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Location</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">
-                      Assigned Agent
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-900">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredCases.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center py-8 text-gray-500">
-                        {loading
-                          ? 'Loading cases...'
-                          : searchTerm
-                          ? 'No matching cases found'
-                          : 'No cases found'}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredCases.map(caseItem => (
-                      <tr key={caseItem._id} className="hover:bg-gray-50">
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium text-gray-900 truncate max-w-[150px]">
-                              {caseItem.customerName}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <AlertCircle className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900 truncate max-w-[200px]">
-                              {caseItem.issue}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4 text-gray-900">{caseItem.department}</td>
-                        <td className="py-4 px-4">
-                          <select
-                            value={caseItem.status}
-                            onChange={e => handleChangeStatus(caseItem._id, e.target.value)}
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              caseItem.status
-                            )} focus:outline-none focus:ring-2 focus:ring-blue-500`}>
-                            <option value="active">Active</option>
-                            <option value="pending">Pending</option>
-                            <option value="closed">Closed</option>
-                          </select>
-                        </td>
-                        <td className="py-4 px-4">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-gray-400" />
-                            <span className="text-gray-900 truncate max-w-[120px]">
-                              {caseItem.location}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <select
-                            value={caseItem.agent || ''}
-                            onChange={e => handleAssignAgent(caseItem._id, e.target.value)}
-                            className="w-48 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm">
-                            <option value="">Unassigned</option>
-                            {agents.map(agent => (
-                              <option key={agent._id} value={agent._id}>
-                                {agent.fullname} ({agent.department})
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="py-4 px-4">
-                          <button
-                            onClick={() => setSelectedCase(caseItem)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors">
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Case Details Modal */}
-        {selectedCase && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <AlertCircle className="h-6 w-6 text-blue-600" />
-                    Case Details
-                  </h3>
-                  <button
-                    onClick={() => setSelectedCase(null)}
-                    className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                      Customer Information
-                    </h4>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Name</label>
-                        <p className="text-sm text-gray-900 mt-1">{selectedCase.customerName}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Email</label>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {selectedCase.customerEmail || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Phone</label>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {selectedCase.customerPhone || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Case Details</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Issue</label>
-                        <p className="text-sm text-gray-900 mt-1">{selectedCase.issue}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Department</label>
-                        <p className="text-sm text-gray-900 mt-1">{selectedCase.department}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Location</label>
-                        <p className="text-sm text-gray-900 mt-1">
-                          {selectedCase.location || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-600">Status</label>
-                        <div className="mt-1">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                              selectedCase.status
-                            )}`}>
-                            {getStatusIcon(selectedCase.status)}
-                            <span className="ml-1 capitalize">{selectedCase.status}</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2 bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Description</h4>
-                    <div className="bg-white p-4 rounded-lg border border-gray-200">
-                      <p className="text-sm text-gray-700">
-                        {selectedCase.description || 'No additional description provided'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2 bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Agent Assignment</h4>
-                    <select
-                      value={selectedCase.agent || ''}
-                      onChange={e => {
-                        handleAssignAgent(selectedCase._id, e.target.value);
-                        setSelectedCase({ ...selectedCase, agent: e.target.value });
-                      }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
-                      <option value="">Unassigned</option>
-                      {agents.map(agent => (
-                        <option key={agent._id} value={agent._id}>
-                          {agent.fullname} ({agent.department})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Filters</h2>
+              <div className="flex flex-wrap gap-4">
+                <Select
+                  value={selectedDepartment}
+                  onValueChange={(value) => setSelectedDepartment(value)}
+                >
+                  <SelectTrigger className="px-4 py-2 rounded-xl border border-gray-300 focus:ring-0">
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border border-gray-300">
+                    {departments.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept === "all" ? "All Departments" : dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Cases Grid */}
+        <div className="grid gap-6">
+          {filteredCases.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+              <FiMessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <p className="text-lg font-medium text-gray-900 mb-2">
+                No cases found
+              </p>
+              <p className="text-gray-500">
+                {selectedDepartment !== "all"
+                  ? `No cases in ${selectedDepartment} department`
+                  : "No cases have been created yet"}
+              </p>
+            </div>
+          ) : (
+            filteredCases.map((c) => (
+              <div
+                key={c._id}
+                className="bg-white rounded-2xl border border-gray-200 transition-all duration-200"
+              >
+                <div className="p-6">
+                  <div className="flex flex-col lg:flex-row justify-between gap-6">
+                    {/* Case Details */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          {c.customerName}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          {c.priority && (
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPriorityStyles(
+                                c.priority
+                              )}`}
+                            >
+                              {c.priority}
+                            </span>
+                          )}
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusStyles(
+                              c.status
+                            )}`}
+                          >
+                            {getStatusIcon(c.status)}
+                            {c.status}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-gray-600 mb-4 line-clamp-2">
+                        {c.issue}
+                      </p>
+
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <FiUser className="w-4 h-4" />
+                          <span className="font-medium">{c.department}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FiClock className="w-4 h-4" />
+                          <span>
+                            {new Date(c.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {c.assignedAgent && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span>Assigned to {c.assignedAgent.fullname}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Assignment Section */}
+                    <div className="lg:w-64 flex flex-col gap-4">
+                      {c.assignedAgent ? (
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600 mb-1">
+                            Assigned Agent
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {c.assignedAgent.fullname}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {c.assignedAgent.email}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600 mb-2">
+                            No agent assigned
+                          </p>
+                        </div>
+                      )}
+
+                      <Select
+                        value={c.assignedAgent?._id || ""}
+                        onValueChange={(agentId) => {
+                          if (agentId) {
+                            assignMutation.mutate({
+                              caseId: c._id,
+                              agentId,
+                            });
+                          }
+                        }}
+                        disabled={assignMutation.isPending}
+                      >
+                        <SelectTrigger className="w-full px-3 py-2 rounded-xl border border-gray-300 focus:ring-0 focus:outline-none disabled:opacity-50">
+                          <SelectValue
+                            placeholder={
+                              c.assignedAgent ? "Change Agent" : "Assign Agent"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border border-gray-300">
+                          {c.assignedAgent &&
+                            !agents.some(
+                              (a) => a._id === c.assignedAgent?._id
+                            ) && (
+                              <SelectItem value={c.assignedAgent._id}>
+                                {c.assignedAgent.fullname} -{" "}
+                                {c.assignedAgent?.department || "-"}
+                              </SelectItem>
+                            )}
+
+                          {agents.map((agent) => (
+                            <SelectItem key={agent._id} value={agent._id}>
+                              {agent.fullname} - {agent.department}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {assignMutation.isPending && (
+                        <div className="text-sm text-gray-500">
+                          Assigning...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
