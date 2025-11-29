@@ -1,158 +1,112 @@
-const Case = require('../models/case');
-const Message = require('../models/Message');
-const Agent = require('../models/agent');
-const Customer = require('../models/customer');
+const Case = require("../models/case");
+const User = require("../models/user");
 
-// Create a new case
 exports.createCase = async (req, res) => {
   try {
-    const { customerName, issue, department, location, customerId } = req.body;
+    const { issue, department, location } = req.body;
+    const customerId = req.user._id;
 
-    if (!customerName || !issue || !department || !location) {
-      return res.status(400).json({
-        error: 'Missing required fields: customerName, issue, department, location',
-      });
-    }
-
-    const newCase = new Case({
-      customerName,
+    const newCase = await Case.create({
+      customer: customerId,
+      customerName: req.user.fullname || req.user.email.split("@")[0],
       issue,
       department,
       location,
-      status: 'pending',
-      customer: customerId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: "pending",
     });
 
-    await newCase.save();
-
-    // Populate customer details before returning
     const populatedCase = await Case.findById(newCase._id)
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
+      .populate("customer", "fullname email phone")
+      .populate("assignedAgent", "fullname department");
 
     res.status(201).json({
       success: true,
       case: populatedCase,
-      message: 'Case created successfully',
     });
   } catch (err) {
-    console.error('Error creating case:', err);
-    res.status(500).json({
-      error: 'Server error while creating case',
-      details: err.message,
-    });
+    console.error("Create case error:", err);
+    res.status(500).json({ error: "Failed to create case" });
   }
 };
 
-// Get latest case for customer
-exports.getLatestCase = async (req, res) => {
+exports.getAllCases = async (req, res) => {
   try {
-    const { customerId } = req.params;
+    const { role, page = 1, limit = 20 } = req.query;
+    const filter = role ? { role } : {};
+    const skip = (page - 1) * limit;
 
-    const latestCase = await Case.findOne({ customer: customerId })
+    const users = await Case.find(filter)
+      .populate("assignedAgent", "fullname department")
       .sort({ createdAt: -1 })
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    if (!latestCase) {
-      return res.status(404).json({
-        error: 'No cases found for this customer',
-      });
-    }
+    const total = await Case.countDocuments(filter);
 
-    res.status(200).json({
+    res.json({
       success: true,
-      case: latestCase,
+      users,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / limit),
+        total,
+      },
     });
   } catch (err) {
-    console.error('Error fetching latest case:', err);
-    res.status(500).json({
-      error: 'Server error while fetching case',
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 };
 
-// Get all cases with filtering options
-exports.getCases = async (req, res) => {
+exports.getMyCases = async (req, res) => {
   try {
-    const { status, department } = req.query;
-    const filter = {};
-
-    if (status) filter.status = status;
-    if (department) filter.department = department;
+    const filter =
+      req.user.role === "customer"
+        ? { customer: req.user._id }
+        : { assignedAgent: req.user._id };
 
     const cases = await Case.find(filter)
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department')
-      .sort({ createdAt: -1 });
+      .populate("customer", "fullname email")
+      .populate("assignedAgent", "fullname department")
+      .sort({ updatedAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      count: cases.length,
-      cases,
-    });
+    res.json({ success: true, cases });
   } catch (err) {
-    console.error('Error fetching cases:', err);
-    res.status(500).json({
-      error: 'Server error while fetching cases',
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to fetch cases" });
   }
 };
 
-// Accept a case (for agents)
 exports.acceptCase = async (req, res) => {
   try {
     const { caseId } = req.params;
-    const { agentId } = req.body;
-
-    const agent = await Agent.findById(agentId);
-    if (!agent) {
-      return res.status(404).json({ error: 'Agent not found' });
-    }
 
     const updatedCase = await Case.findByIdAndUpdate(
       caseId,
       {
-        status: 'active',
-        assignedAgent: agentId,
+        assignedAgent: req.user._id,
+        status: "active",
         updatedAt: new Date(),
       },
       { new: true }
     )
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
+      .populate("customer", "fullname email")
+      .populate("assignedAgent", "fullname department");
 
-    if (!updatedCase) {
-      return res.status(404).json({ error: 'Case not found' });
-    }
+    if (!updatedCase) return res.status(404).json({ error: "Case not found" });
 
-    res.status(200).json({
-      success: true,
-      case: updatedCase,
-      message: 'Case accepted successfully',
-    });
+    res.json({ success: true, case: updatedCase });
   } catch (err) {
-    console.error('Error accepting case:', err);
-    res.status(500).json({
-      error: 'Server error while accepting case',
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to accept case" });
   }
 };
 
-// Update case status
-exports.updateCaseStatus = async (req, res) => {
+exports.updateStatus = async (req, res) => {
   try {
     const { caseId } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'active', 'resolved', 'rejected'];
+    const validStatuses = ["pending", "active", "resolved", "rejected"];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Invalid status value' });
+      return res.status(400).json({ error: "Invalid status" });
     }
 
     const updatedCase = await Case.findByIdAndUpdate(
@@ -160,163 +114,64 @@ exports.updateCaseStatus = async (req, res) => {
       {
         status,
         updatedAt: new Date(),
-        ...(status === 'resolved' && { resolvedAt: new Date() }),
+        ...(status === "resolved" && { resolvedAt: new Date() }),
       },
       { new: true }
-    )
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
+    ).populate("customer assignedAgent");
 
-    if (!updatedCase) {
-      return res.status(404).json({ error: 'Case not found' });
-    }
-
-    res.status(200).json({
-      success: true,
-      case: updatedCase,
-      message: `Case status updated to ${status}`,
-    });
+    res.json({ success: true, case: updatedCase });
   } catch (err) {
-    console.error('Error updating case status:', err);
-    res.status(500).json({
-      error: 'Server error while updating case status',
-      details: err.message,
-    });
+    res.status(500).json({ error: "Failed to update status" });
   }
 };
 
-// Get cases by agent ID
-exports.getCasesByAgentId = async (req, res) => {
-  try {
-    const { agentId } = req.params;
-    const { status } = req.query;
-
-    const filter = { assignedAgent: agentId };
-    if (status) filter.status = status;
-
-    const cases = await Case.find(filter)
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department')
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: cases.length,
-      cases,
-    });
-  } catch (err) {
-    console.error('Error fetching agent cases:', err);
-    res.status(500).json({
-      error: 'Server error while fetching agent cases',
-      details: err.message,
-    });
-  }
-};
-
-// Get case messages
-exports.getCaseMessages = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (page - 1) * limit;
-
-    const messages = await Message.find({ case: caseId })
-      .sort({
-        timestamp: 1,
-      })
-      .skip(skip)
-      .limit(parseInt(limit));
-    const totalMessages = await Message.countDocuments({ case: caseId });
-
-    res.status(200).json({
-      success: true,
-      messages: messages.reverse(),
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalMessages / limit),
-        totalMessages,
-      },
-    });
-  } catch (err) {
-    console.error('Error fetching case messages:', err);
-    res.status(500).json({
-      error: 'Server error while fetching messages',
-      details: err.message,
-    });
-  }
-};
-
-// Assign case to agent
 exports.assignCase = async (req, res) => {
   try {
     const { caseId, agentId } = req.body;
 
-    const agent = await Agent.findById(agentId);
-    if (!agent) {
-      return res.status(404).json({ error: 'Agent not found' });
+    const agent = await User.findById(agentId);
+    if (!agent || agent.role !== "agent") {
+      return res.status(400).json({ error: "Invalid agent" });
     }
 
     const updatedCase = await Case.findByIdAndUpdate(
       caseId,
-      {
-        assignedAgent: agentId,
-        updatedAt: new Date(),
+      { 
+        assignedAgent: agentId, 
+        status: "in-progress", 
+        updatedAt: new Date() 
       },
       { new: true }
-    )
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
+    ).populate("customer assignedAgent");
 
     if (!updatedCase) {
-      return res.status(404).json({ error: 'Case not found' });
+      return res.status(404).json({ error: "Case not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      case: updatedCase,
-      message: 'Case assigned successfully',
+    const io = req.app.get("io");
+
+    await notifyAgentAssigned(io, {
+      recipient: updatedCase.customer._id,
+      caseId: updatedCase._id,
+      agentName: updatedCase.assignedAgent.fullname || updatedCase.assignedAgent.email.split("@")[0],
+      caseTitle: updatedCase.title || updatedCase.issue,
     });
+
+    await notifyCaseAssigned(io, {
+      recipient: agentId,
+      caseId: updatedCase._id,
+      caseTitle: updatedCase.title || updatedCase.issue,
+      customerName: updatedCase.customer.fullname || updatedCase.customer.email.split("@")[0],
+    });
+
+    res.json({ 
+      success: true, 
+      case: updatedCase 
+    });
+
   } catch (err) {
-    console.error('Error assigning case:', err);
-    res.status(500).json({
-      error: 'Server error while assigning case',
-      details: err.message,
-    });
+    console.error("Assign case error:", err);
+    res.status(500).json({ error: "Failed to assign case" });
   }
 };
-
-// Reject a case (agent action)
-exports.rejectCase = async (req, res) => {
-  try {
-    const { caseId } = req.params;
-
-    const updatedCase = await Case.findByIdAndUpdate(
-      caseId,
-      {
-        status: 'rejected',
-        updatedAt: new Date(),
-      },
-      { new: true }
-    )
-      .populate('customer', 'fullname email phone')
-      .populate('assignedAgent', 'fullname department');
-
-    if (!updatedCase) {
-      return res.status(404).json({ error: 'Case not found' });
-    }
-
-    res.status(200).json({
-      success: true,
-      case: updatedCase,
-      message: 'Case rejected successfully',
-    });
-  } catch (err) {
-    console.error('Error rejecting case:', err);
-    res.status(500).json({
-      error: 'Server error while rejecting case',
-      details: err.message,
-    });
-  }
-};
-
 module.exports = exports;
