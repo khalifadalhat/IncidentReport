@@ -10,7 +10,9 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)](https://socket.io/)
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://incidence-report.netlify.app/)
+
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Quick Start](#-quick-start) • [Live Demo](#-live-demo) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
 </div>
 
@@ -379,24 +381,91 @@ User-specific notifications and status updates
 
 ---
 
+## 🌐 Live Demo
+
+**🔗 [View Live Application](https://incidence-report.netlify.app/)**
+
+Experience the full Incident Report platform with real-time features, role-based dashboards, and comprehensive case management.
+
+---
+
 ## 🎨 Screenshots & Demo
 
-> **Note:** Add screenshots of your application here to showcase the UI
+### 🏠 Landing Page
 
-### Customer Portal
-- Case submission form
-- Real-time chat interface
-- Case status tracking
+![Landing Page](./screenshots/Landingpage.png)
 
-### Agent Dashboard
-- Case management interface
-- Live chat with customers
-- Performance metrics
+The welcoming landing page that introduces visitors to the Incident Report platform.
 
-### Admin Panel
-- User management
-- Analytics dashboard
-- System configuration
+---
+
+### 👥 Customer Portal
+
+#### User Details & Profile
+![User Details](./screenshots/UserDetails.png)
+- User profile management
+- Personal information updates
+
+#### Department Selection
+![User Department](./screenshots/UserDepartment.png)
+- Choose the appropriate department for your incident
+- Multiple specialized departments available
+
+#### My Cases
+![User Cases](./screenshots/UserCases.png)
+- View all your submitted cases
+- Track case status and progress
+- Monitor resolution timeline
+
+#### Real-Time Chat
+![User Chat](./screenshots/UserChat.png)
+- Direct communication with assigned agents
+- Real-time messaging via Socket.io
+- File and image sharing support
+
+---
+
+### 👮 Agent Dashboard
+
+#### Agent Dashboard Overview
+![Agent Dashboard](./screenshots/AgentDashboard.png)
+- Overview of assigned cases
+- Quick access to pending, active, and resolved cases
+- Performance metrics and statistics
+
+#### Agent Cases Management
+![Agent Cases](./screenshots/AgentCases.png)
+- Manage all assigned incidents
+- Filter by status (pending, active, resolved)
+- Quick case details and actions
+
+#### Agent Settings
+![Agent Settings](./screenshots/AgentSettings.png)
+- Profile configuration
+- Account settings and preferences
+
+---
+
+### 👔 Admin Panel
+
+#### Admin Dashboard
+![Admin Dashboard](./screenshots/Admindashboard.png)
+- Comprehensive analytics and statistics
+- System-wide overview
+- Key performance indicators
+
+#### User Management
+![Admin Users](./screenshots/AdminUsers.png)
+- Manage all users (customers, agents, supervisors)
+- Create new agents and admins
+- User role assignment and permissions
+
+#### Case Management
+![Admin Case Management](./screenshots/AdminCaseManagement.png)
+- View all cases across the system
+- Assign cases to agents
+- Monitor case resolution rates
+- Department-wise case distribution
 
 ---
 
@@ -425,18 +494,7 @@ npm run lint       # Run ESLint
 - **Linting**: ESLint with TypeScript support
 - **Formatting**: Prettier (recommended)
 
----
 
-## 🧪 Testing
-
-```bash
-# Backend tests (when implemented)
-cd backend
-npm test
-
-# Frontend tests (when implemented)
-cd client
-npm test
 ```
 
 ---
