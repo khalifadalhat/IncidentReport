@@ -1,5 +1,5 @@
-import { LucideIcon } from 'lucide-react';
-import { IconType } from 'react-icons/lib';
+import { LucideIcon } from "lucide-react";
+import { IconType } from "react-icons/lib";
 
 export interface AssignedAgent {
   _id: string;
@@ -17,33 +17,38 @@ export interface Customer {
   gender: string;
   phone: number;
   email: string;
-  status: string;
-}
-export interface ICase {
-  _id: string;
-  customerName: string;
-  customer: Customer;
-  issue: string;
   department: string;
   status: string;
-  location: string;
-  agent: string;
-  assignedAgent: AssignedAgent;
-  createdAt: string;
-  resolvedAt: string;
-  closedAt: string;
-  unreadCount?: number;
-  updatedAt?: string | Date;
 }
+
+
+export interface Case {
+  _id: string;
+  customer?: {
+    _id: string;
+    fullname: string;
+    email: string;
+  };
+  customerName: string;
+  issue: string;
+  department: string;
+  location: string;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 
 export interface ICustomer {
   _id: string;
   fullname: string;
   location: string;
   gender: string;
-  phone: number;
+  phone: string;
   email: string;
+  department: string;
   status: string;
+  role: UserRole;
 }
 
 export interface IAdmin {
@@ -86,7 +91,7 @@ export interface IMessage {
   read: boolean;
 }
 
-export type UserRole = 'admin' | 'agent' | 'customer';
+export type UserRole = "admin" | "agent" | "customer";
 export interface DecodedToken {
   userId: string;
   role: UserRole;
@@ -101,7 +106,7 @@ export interface MenuItem {
   icon: MenuIcon;
   badge?: number;
   disabled?: boolean;
-  submenu?: Omit<MenuItem, 'submenu'>[];
+  submenu?: Omit<MenuItem, "submenu">[];
 }
 
 export interface AdminMenuItem extends MenuItem {
