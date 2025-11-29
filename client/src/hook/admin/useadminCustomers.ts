@@ -12,9 +12,9 @@ export const useFetchCustomers = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get('/customers');
-        setCustomers(response.data.customers);
-        return response.data.customers;
+        const response = await api.get('/api/admin/users');
+        setCustomers(response.data.users);
+        return response.data.users;
       } catch (error) {
         console.error('Error fetching customers:', error);
         setError(error instanceof Error ? error.message : 'Failed to fetch customers');
@@ -23,7 +23,7 @@ export const useFetchCustomers = () => {
         setLoading(false);
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5, 
   });
 };
 
@@ -32,7 +32,7 @@ export const useDeleteCustomer = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/customers/${id}`);
+      await api.delete(`/api/admin/users/${id}`);
       return id;
     },
     onSuccess: id => {
