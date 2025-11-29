@@ -1,43 +1,54 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAgentCasesStore } from '../../store/agent/useAgentCasesStore';
 import api from '../../utils/api';
-import { ICase } from '../../Types/Icase';
+import { Case } from '@/Types/Icase';
 
-export const useFetchAgentCases = (agentId?: string) => {
+export const useFetchAgentCases = (agentId?: string, status?: string) => {
   const { setActiveCases, setPendingCases, setClosedCases, setStats, setLoading, setError } =
     useAgentCasesStore();
 
   return useQuery({
-    queryKey: ['agentCases', agentId],
+    queryKey: ['agentCases', agentId, status],
     queryFn: async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await api.get(`/cases/agent/${agentId}`);
+        const url = status ? `/api/cases/my?status=${status}` : `/api/cases/my`;
+        const response = await api.get(url);
 
         const agentCases = response.data.cases;
 
-        const active = agentCases.filter(
-          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'active'
-        );
+        if (status) {
+          if (status === 'active') {
+            setActiveCases(agentCases);
+          } else if (status === 'pending') {
+            setPendingCases(agentCases);
+          } else if (status === 'resolved') {
+            setClosedCases(agentCases);
+          }
+        } else {
+          const active = agentCases.filter(
+            (singleCase: Case) => singleCase.status?.toLowerCase() === 'active'
+          );
 
-        const pending = agentCases.filter(
-          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'pending'
-        );
+          const pending = agentCases.filter(
+            (singleCase: Case) => singleCase.status?.toLowerCase() === 'pending'
+          );
 
-        const resolved = agentCases.filter(
-          (singleCase: ICase) => singleCase.status?.toLowerCase() === 'resolved'
-        );
+          const resolved = agentCases.filter(
+            (singleCase: Case) => singleCase.status?.toLowerCase() === 'resolved'
+          );
 
-        setActiveCases(active);
-        setPendingCases(pending);
-        setClosedCases(resolved);
+          setActiveCases(active);
+          setPendingCases(pending);
+          setClosedCases(resolved);
+        }
 
         setStats({
-          pending: pending.length,
-          resolved: resolved.length,
-          customers: new Set(agentCases.map((c: ICase) => c.customerName)).size,
+          pending: agentCases.filter((c: Case) => c.status === 'pending').length,
+          resolved: agentCases.filter((c: Case) => c.status === 'resolved').length,
+          customers: new Set(agentCases.map((c: Case) => c.customerName)).size,
           satisfaction: Math.floor(Math.random() * 30) + 70,
         });
 
