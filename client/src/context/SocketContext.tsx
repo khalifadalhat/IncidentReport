@@ -1,96 +1,75 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import api from '../utils/api';
-import Cookie from 'js-cookie';
+import { createContext, useContext, useEffect, useState } from "react";
+import { io, Socket } from "socket.io-client";
 
-type SocketContextType = {
+interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
-  connectionState: 'connecting' | 'connected' | 'disconnected';
-};
+}
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
-  connectionState: 'connecting',
 });
+
+
+const getAuthTokenFromStorage = () => {
+  try {
+    const storageData = localStorage.getItem("auth-storage");
+    if (storageData) {
+      const parsedData = JSON.parse(storageData);
+      return parsedData.state.token; 
+    }
+  } catch (e) {
+    console.error("Error parsing auth-storage:", e);
+  }
+  return null;
+};
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [connectionState, setConnectionState] = useState<
-    'connecting' | 'connected' | 'disconnected'
-  >('connecting');
-
-  const token = Cookie.get('token');
-  const userData = Cookie.get('userData');
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const socketURL =
-      api.defaults.baseURL?.replace('/api', '') ||
-      process.env.REACT_APP_API_URL ||
-      'http://localhost:5173';
+    const token = getAuthTokenFromStorage(); 
+    
+    if (!token) {
+      console.warn("Socket connection skipped: JWT token not found in storage.");
+      return;
+    }
 
-    const socketInstance = io(socketURL, {
-      withCredentials: true,
-      transports: ['websocket', 'polling'],
-      auth: { token },
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+    const newSocket = io(
+      import.meta.env.VITE_API_URL || "http://localhost:5000",
+      {
+        auth: { token },
+        transports: ["websocket"],
+        autoConnect: true,
+      }
+    );
+
+    newSocket.on("connect", () => {
+      setIsConnected(true);
+    });
+    
+
+    newSocket.on("connect_error", (err) => {
+        console.error("Socket Connection Error:", err.message);
+        setIsConnected(false);
     });
 
-    const onConnect = () => {
-      setConnectionState('connected');
-    };
+    newSocket.on("disconnect", (reason) => {
+      console.log("Disconnected from server. Reason:", reason);
+      setIsConnected(false);
+    });
 
-    const onDisconnect = () => {
-      setConnectionState('disconnected');
-    };
-
-    const onConnectError = (error: Error) => {
-      console.error('Socket connection error:', error);
-      setConnectionState('disconnected');
-    };
-
-    const onReconnect = () => {
-      setConnectionState('connected');
-    };
-
-    const onReconnectError = (error: Error) => {
-      console.error('Socket reconnection error:', error);
-    };
-
-    const onReconnectFailed = () => {
-      console.error('Socket reconnection failed after all attempts');
-      setConnectionState('disconnected');
-    };
-
-    // Add all event listeners
-    socketInstance.on('connect', onConnect);
-    socketInstance.on('disconnect', onDisconnect);
-    socketInstance.on('connect_error', onConnectError);
-    socketInstance.on('reconnect', onReconnect);
-    socketInstance.on('reconnect_error', onReconnectError);
-    socketInstance.on('reconnect_failed', onReconnectFailed);
-
-    setSocket(socketInstance);
-    setConnectionState('connecting');
+    setSocket(newSocket);
 
     return () => {
-      console.log('SocketProvider - Cleaning up socket connection');
-      socketInstance.off('connect', onConnect);
-      socketInstance.off('disconnect', onDisconnect);
-      socketInstance.off('connect_error', onConnectError);
-      socketInstance.off('reconnect', onReconnect);
-      socketInstance.off('reconnect_error', onReconnectError);
-      socketInstance.off('reconnect_failed', onReconnectFailed);
-      socketInstance.disconnect();
+      newSocket.close();
     };
-  }, [token, userData]);
+  }, []); 
 
   return (
-    <SocketContext.Provider
-      value={{ socket, isConnected: connectionState === 'connected', connectionState }}>
+    <SocketContext.Provider value={{ socket, isConnected }}>
       {children}
     </SocketContext.Provider>
   );
