@@ -6,7 +6,8 @@
   command = "npm run build"
   
   # Directory to publish (output of the build)
-  publish = "client/dist"
+  # Since base is "client", this path is relative to the client directory
+  publish = "dist"
 
 # Redirect all routes to index.html for client-side routing
 [[redirects]]
