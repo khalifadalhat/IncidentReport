@@ -5,10 +5,10 @@ const options = {
     openapi: "3.0.0",
 
     info: {
-      title: "Support Platform API",
+      title: "Incidence Report API",
       version: "1.0.0",
       description:
-        "Real-time customer support API with unified User model (Customer/Agent/Admin).",
+        "Incidence Report API with unified User model (Customer/Agent/Admin).",
       contact: {
         name: "API Support",
         email: "support@yourapp.com",
