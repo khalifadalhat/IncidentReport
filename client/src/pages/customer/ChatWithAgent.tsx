@@ -1,348 +1,255 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { FiSend, FiPaperclip, FiMessageSquare, FiSmile, FiSearch } from 'react-icons/fi';
-import { useCustomerStore } from '../../store/customer/useCustomerStore';
-import api from '../../utils/api';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import EmojiPicker from 'emoji-picker-react';
-import { useSocket } from '@/context/SocketContext';
-import { User } from 'lucide-react';
+import { useEffect, useRef, useState } from "react";
+import {
+  FiSend,
+  FiSmile,
+  FiMessageSquare,
+  FiUser,
+  FiClock,
+} from "react-icons/fi";
+import { format } from "date-fns";
+import { useSocket } from "@/context/SocketContext";
+import EmojiPicker from "emoji-picker-react";
+import { useCustomerStore } from "@/store/useCustomerStore";
+import Cookie from "js-cookie";
 
 interface Message {
-  _id?: string;
-  sender: string;
+  _id: string;
   text: string;
-  timestamp: Date;
-  read?: boolean;
+  senderRole: "customer" | "agent";
+  sender: string;
+  timestamp: string;
 }
 
-interface Agent {
-  _id: string;
-  fullname: string;
-  department: string;
-  isActive: boolean;
-  lastActive?: Date;
-}
-
-interface CaseDetails {
-  _id: string;
-  customerName: string;
-  department: string;
-  issue: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const ChatWithAgent: React.FC = () => {
-  const { caseId } = useCustomerStore();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [message, setMessage] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [activeAgent, setActiveAgent] = useState<Agent | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const ChatWithAgent = () => {
+  const { currentCaseId } = useCustomerStore();
   const { socket, isConnected } = useSocket();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch case details
-  const { data: caseDetails } = useQuery<CaseDetails>({
-    queryKey: ['caseDetails', caseId],
-    queryFn: async () => {
-      const response = await api.get(`/cases/${caseId}`);
-      return response.data;
-    },
-    enabled: !!caseId,
-  });
+  const userData = Cookie.get("userData");
+  const user = userData ? JSON.parse(userData) : null;
+  const currentUserId = user?.sub;
 
-  // Fetch agents
-  const { data: agentList = [] } = useQuery<Agent[]>({
-    queryKey: ['agents'],
-    queryFn: async () => {
-      const response = await api.get('/agents/available');
-      return response.data.map((agent: Agent) => ({
-        ...agent,
-        lastActive: new Date(),
-      }));
-    },
-  });
-
-  // Filter agents based on search term
-  const filteredAgents = agentList.filter(
-    agent =>
-      agent.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      agent.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Initialize socket connection
   useEffect(() => {
-    if (!socket || !isConnected || !caseId) return;
+    if (!socket || !isConnected || !currentCaseId) return;
 
-    const handleInitialMessages = (initialMessages: Message[]) => {
-      setMessages(
-        initialMessages.map(msg => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        }))
-      );
+    socket.emit("joinCase", currentCaseId);
+
+    const handleInitialMessages = (msgs: Message[]) => {
+      setMessages(msgs);
     };
 
-    const handleNewMessage = (newMessage: Message) => {
-      setMessages(prev => [
-        ...prev,
-        {
-          ...newMessage,
-          timestamp: new Date(newMessage.timestamp),
-        },
-      ]);
+    const handleReceiveMessage = (msg: Message) => {
+      console.log("Received message:", msg);
+      console.log("Sender:", msg.sender);
+      console.log("Current User:", currentUserId);
+      setMessages((prev) => [...prev, msg]);
     };
 
-    socket.on('initialMessages', handleInitialMessages);
-    socket.on('receiveMessage', handleNewMessage);
-
-    // Join the case room
-    socket.emit('joinCase', caseId);
+    socket.on("initialMessages", handleInitialMessages);
+    socket.on("receiveMessage", handleReceiveMessage);
 
     return () => {
-      socket.off('initialMessages', handleInitialMessages);
-      socket.off('receiveMessage', handleNewMessage);
+      socket.off("initialMessages", handleInitialMessages);
+      socket.off("receiveMessage", handleReceiveMessage);
+      socket.emit("leaveCase", currentCaseId);
     };
-  }, [socket, isConnected, caseId]);
+  }, [socket, isConnected, currentCaseId]);
 
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = () => {
-    if (!message.trim() || !socket || !caseId || !activeAgent) return;
+    if (!input.trim() || !socket || !currentCaseId) return;
 
-    const newMessage: Message = {
-      sender: 'customer',
-      text: message,
-      timestamp: new Date(),
+    const messageData = {
+      caseId: currentCaseId,
+      text: input.trim(),
     };
 
-    socket.emit('sendMessage', {
-      ...newMessage,
-      caseId,
-      recipient: activeAgent._id,
-    });
-
-    setMessage('');
+    socket.emit("sendMessage", messageData);
+    setInput("");
+    setShowEmoji(false);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const handleEmojiSelect = (emojiData: { emoji: string }) => {
-    setMessage(prev => prev + emojiData.emoji);
-  };
-
-  const formatTime = (date: Date) => format(date, 'h:mm a');
-  const formatMessageDate = (date: Date) => format(date, 'MMMM d, yyyy');
+  if (!currentCaseId) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center p-10 bg-white rounded-2xl shadow-lg">
+          <FiMessageSquare className="mx-auto text-6xl text-gray-300 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            No Active Case
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Please create a support request first to start chatting
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-black text-white px-8 py-3 rounded-xl hover:bg-gray-800 transition"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar - Agent List */}
-      <div className="w-1/3 flex flex-col border-r border-gray-300 bg-white">
-        {/* Search Bar */}
-        <div className="p-3 bg-gray-50">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search agents..."
-              className="w-full py-2 pl-10 pr-4 bg-white rounded-lg focus:outline-none"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
+    <div className="h-screen flex bg-gray-50">
+      <div className="w-80 bg-white border-r flex flex-col">
+        <div className="p-4 border-b bg-black text-white">
+          <h2 className="text-xl font-bold">Your Support Case</h2>
+          <p className="text-sm opacity-90">Live chat with agent</p>
         </div>
 
-        {/* Case Info */}
-        {caseDetails && (
-          <div className="p-3 border-b border-gray-200">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <h3 className="font-medium text-blue-800">{caseDetails.department} Support</h3>
-              <p className="text-sm text-gray-700 mt-1 truncate">{caseDetails.issue}</p>
-              <div className="flex justify-between items-center mt-2 text-xs">
-                <span
-                  className={`px-2 py-1 rounded-full ${
-                    caseDetails.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                  {caseDetails.status}
-                </span>
-                <span className="text-gray-500">
-                  Created: {format(new Date(caseDetails.createdAt), 'MMM d')}
-                </span>
-              </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="bg-gray-50 p-4 rounded-lg border">
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <FiUser className="text-black" />
+                Your Case
+              </h3>
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                Active
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              You are connected to a support agent
+            </p>
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span className="bg-gray-100 px-2 py-1 rounded">Support</span>
+              <span className="flex items-center gap-1">
+                <FiClock />
+                {format(new Date(), "MMM d, h:mm a")}
+              </span>
             </div>
           </div>
-        )}
 
-        {/* Agent List */}
-        <div className="flex-1 overflow-y-auto">
-          {filteredAgents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
-              <FiMessageSquare className="h-10 w-10 mb-2" />
-              <p>No agents available</p>
-            </div>
-          ) : (
-            filteredAgents.map(agent => (
-              <div
-                key={agent._id}
-                onClick={() => setActiveAgent(agent)}
-                className={`flex items-center p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                  activeAgent?._id === agent._id ? 'bg-blue-50' : ''
-                }`}>
-                <User
-                  name={agent.fullname}
-                  size="40"
-                  className="mr-3 rounded-full"
-                  color={agent.isActive ? '#3b82f6' : '#9ca3af'}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium text-gray-900 truncate">{agent.fullname}</h3>
-                    <span className="text-xs text-gray-500">
-                      {agent.isActive ? 'Online' : 'Offline'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 truncate">{agent.department} Department</p>
-                </div>
-              </div>
-            ))
-          )}
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-800 mb-2">Need Help?</h4>
+            <p className="text-sm text-blue-600">
+              Our support team is here to help you. Describe your issue in
+              detail for better assistance.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {activeAgent ? (
-          <>
-            {/* Chat Header */}
-            <div className="flex items-center p-3 border-b border-gray-300 bg-gray-50">
-              <User
-                name={activeAgent.fullname}
-                size="40"
-                className="mr-3 rounded-full"
-                color={activeAgent.isActive ? '#3b82f6' : '#9ca3af'}
-              />
-              <div className="flex-1">
-                <h3 className="font-medium">{activeAgent.fullname}</h3>
-                <p className="text-xs text-gray-500">
-                  {activeAgent.department} • {activeAgent.isActive ? 'Online' : 'Offline'}
-                </p>
+        {/* Chat Header */}
+        <div className="bg-white border-b p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                A
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Support Agent</h2>
+                <p className="text-sm text-gray-600">Online • Ready to help</p>
               </div>
             </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <FiMessageSquare className="h-10 w-10 mb-2" />
-                  <p>No messages yet</p>
-                  <p className="text-sm mt-1">Start the conversation with {activeAgent.fullname}</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {messages.map((msg, index) => {
-                    const showDateHeader =
-                      index === 0 ||
-                      formatMessageDate(new Date(messages[index - 1].timestamp)) !==
-                        formatMessageDate(new Date(msg.timestamp));
-
-                    return (
-                      <React.Fragment key={index}>
-                        {showDateHeader && (
-                          <div className="flex justify-center my-2">
-                            <div className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
-                              {formatMessageDate(new Date(msg.timestamp))}
-                            </div>
-                          </div>
-                        )}
-                        <div
-                          className={`flex ${
-                            msg.sender === 'customer' ? 'justify-end' : 'justify-start'
-                          }`}>
-                          <div
-                            className={`max-w-xs md:max-w-md rounded-lg p-3 ${
-                              msg.sender === 'customer'
-                                ? 'bg-blue-500 text-white rounded-br-none'
-                                : 'bg-white text-gray-800 rounded-bl-none shadow'
-                            }`}>
-                            <div className="text-sm">{msg.text}</div>
-                            <div
-                              className={`text-xs mt-1 text-right ${
-                                msg.sender === 'customer' ? 'text-blue-100' : 'text-gray-500'
-                              }`}>
-                              {formatTime(new Date(msg.timestamp))}
-                              {msg.sender !== 'customer' && !msg.read && (
-                                <span className="ml-1 text-blue-400">•</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </React.Fragment>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
+            <div className="text-right">
+              <p className="text-sm font-medium text-gray-700">
+                Case #{currentCaseId.slice(-6)}
+              </p>
+              <div className="flex items-center gap-2 justify-end mt-1">
+                <span className="text-xs text-gray-500">
+                  {isConnected ? "Connected" : "Disconnected"}
+                </span>
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                  }`}
+                ></div>
+              </div>
             </div>
-
-            {/* Message Input */}
-            <div className="p-3 bg-white border-t border-gray-300">
-              <form
-                onSubmit={e => {
-                  e.preventDefault();
-                  sendMessage();
-                }}
-                className="flex items-center">
-                <button
-                  type="button"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="p-2 text-gray-500 hover:text-blue-500">
-                  <FiSmile className="h-5 w-5" />
-                </button>
-                <button type="button" className="p-2 text-gray-500 hover:text-blue-500">
-                  <FiPaperclip className="h-5 w-5" />
-                </button>
-                <input
-                  type="text"
-                  value={message}
-                  onChange={e => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="flex-1 py-2 px-4 mx-2 bg-gray-100 rounded-full focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-200"
-                  placeholder="Type a message"
-                />
-                <button
-                  type="submit"
-                  disabled={!message.trim()}
-                  className="p-2 text-blue-500 hover:text-blue-600 disabled:text-gray-400">
-                  <FiSend className="h-5 w-5" />
-                </button>
-              </form>
-              {showEmojiPicker && (
-                <div className="absolute bottom-16 right-4 z-10">
-                  <EmojiPicker onEmojiClick={handleEmojiSelect} />
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-            <FiMessageSquare className="h-16 w-16 mb-4" />
-            <h3 className="text-lg font-medium">No agent selected</h3>
-            <p className="text-sm">Select an agent from the sidebar to start chatting</p>
           </div>
-        )}
+          <div className="mt-3 bg-gray-50 p-3 rounded-lg">
+            <p className="text-sm text-gray-700">
+              <strong>Status:</strong> Connected to support team
+            </p>
+            <div className="flex gap-3 mt-2 text-xs text-gray-600">
+              <span>💬 Live chat support</span>
+              <span>⏱️ Real-time responses</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+          {messages.length === 0 ? (
+            <div className="text-center text-gray-500 py-10">
+              <FiMessageSquare className="mx-auto text-6xl mb-4 opacity-30" />
+              <p>No messages yet. Start the conversation!</p>
+              <p className="text-sm mt-2">The agent will join shortly...</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              // For customer chat, align based on who sent the message
+              const isMyMessage = msg.senderRole === "customer";
+              
+              return (
+                <div
+                  key={msg._id}
+                  className={`flex ${
+                    isMyMessage ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-xs md:max-w-md px-5 py-3 rounded-2xl shadow-sm ${
+                      isMyMessage
+                        ? "bg-blue-600 text-white"
+                        : "bg-white border border-gray-200 text-gray-800"
+                    }`}
+                  >
+                    <p className="break-words">{msg.text}</p>
+                    <p className="text-xs opacity-70 mt-2">
+                      {format(new Date(msg.timestamp), "h:mm a")}
+                    </p>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="bg-white border-t p-4 shadow-lg relative">
+          <div className="flex items-center gap-3 max-w-5xl mx-auto">
+            <button
+              onClick={() => setShowEmoji(!showEmoji)}
+              className="text-gray-500 hover:text-blue-600 transition"
+            >
+              <FiSmile className="text-2xl" />
+            </button>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" && !e.shiftKey && sendMessage()
+              }
+              placeholder="Type your message to the support agent..."
+              className="flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || !isConnected}
+              className="bg-black text-white p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-105 active:scale-95"
+            >
+              <FiSend className="text-lg" />
+            </button>
+          </div>
+          {showEmoji && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
+              <EmojiPicker onEmojiClick={(e) => setInput((i) => i + e.emoji)} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
