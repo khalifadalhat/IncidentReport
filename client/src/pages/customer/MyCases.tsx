@@ -19,7 +19,7 @@ const MyCases = () => {
   const { setCaseId } = useCustomerStore();
   const { data: cases = [], isLoading } = useQuery<Case[]>({
     queryKey: ["myCases"],
-    queryFn: () => api.get("/api/cases/my").then((res) => res.data.cases),
+    queryFn: () => api.get("/cases/my").then((res) => res.data.cases),
   });
 
   const handleCaseClick = (caseId: string) => {
