@@ -68,7 +68,7 @@ const AgentSettings = () => {
   const { data: user, isLoading } = useQuery<Agent>({
     queryKey: ["agentProfile"],
     queryFn: async () => {
-      const response = await api.get("/api/users/profile");
+      const response = await api.get("/users/profile");
       return response.data.user;
     },
   });
@@ -88,7 +88,7 @@ const AgentSettings = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: ProfileFormData) => {
-      const response = await api.patch("/api/users/profile", data);
+      const response = await api.patch("/users/profile", data);
       return response.data;
     },
     onSuccess: () => {
@@ -103,7 +103,7 @@ const AgentSettings = () => {
     mutationFn: async (file: File) => {
       const imgData = new FormData();
       imgData.append("image", file);
-      const response = await api.post("/api/upload", imgData);
+      const response = await api.post("/upload", imgData);
       return response.data;
     },
   });
@@ -111,7 +111,7 @@ const AgentSettings = () => {
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      const response = await api.put("/api/agents/change-password", data);
+      const response = await api.put("/agents/change-password", data);
       return response.data;
     },
     onSuccess: () => {
