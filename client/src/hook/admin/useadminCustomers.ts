@@ -12,7 +12,7 @@ export const useFetchCustomers = () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await api.get('/api/admin/users');
+        const response = await api.get('/admin/users');
         setCustomers(response.data.users);
         return response.data.users;
       } catch (error) {
@@ -32,7 +32,7 @@ export const useDeleteCustomer = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/api/admin/users/${id}`);
+      await api.delete(`/admin/users/${id}`);
       return id;
     },
     onSuccess: id => {
