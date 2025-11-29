@@ -476,7 +476,6 @@ The welcoming landing page that introduces visitors to the Incident Report platf
 **Backend:**
 ```bash
 npm start          # Start development server with nodemon
-npm test           # Run tests (when implemented)
 ```
 
 **Frontend:**
@@ -494,8 +493,6 @@ npm run lint       # Run ESLint
 - **Linting**: ESLint with TypeScript support
 - **Formatting**: Prettier (recommended)
 
-
-```
 
 ---
 
