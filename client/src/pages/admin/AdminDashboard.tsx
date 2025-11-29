@@ -1,340 +1,276 @@
-import React from 'react';
+import { useQuery } from "@tanstack/react-query";
 import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import { TrendingUp, Activity, Clock, RefreshCw, AlertCircle } from 'lucide-react';
-import { useFetchAdminCases } from '../../hook/admin/useAdminCases';
-import { useAdminCasesStore } from '../../store/admin/useAdminCasesStore';
-import { useOutletContext } from 'react-router-dom';
+  Legend,
+} from "recharts";
+import {
+  Users,
+  FileText,
+  AlertOctagon,
+  TrendingUp,
+  MessageSquare,
+  LucideIcon,
+} from "lucide-react";
+import api from "@/utils/api";
 
-interface Case {
-  createdAt: string;
-  closedAt: string;
+const COLORS = {
+  primary: "#2563eb",
+  success: "#10b981",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  purple: "#8b5cf6",
+  gray: "#94a3b8",
+};
+
+interface StatCardProps {
+  title: string;
+  value: number;
+  icon: LucideIcon;
+  color: string;
+  trend?: string;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B'];
+interface CaseData {
+  name: string;
+  value: number;
+  color: string;
+}
 
-const MetricCard = ({
+interface UserData {
+  name: string;
+  count: number;
+}
+
+interface DashboardStats {
+  cases: {
+    total: number;
+    activeCases: number;
+    pendingCases: number;
+    resolvedCases: number;
+    rejectedCases: number;
+  };
+  users: {
+    customers: number;
+    agents: number;
+    admins: number;
+  };
+  today: {
+    newCases: number;
+    newMessages: number;
+  };
+}
+
+const StatCard = ({
   title,
   value,
   icon: Icon,
   color,
   trend,
-  loading,
-}: {
-  title: string;
-  value: number;
-  icon: React.ElementType;
-  color: string;
-  trend?: string;
-  loading?: boolean;
-}) => (
-  <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
-    <div className="flex items-center justify-between">
+}: StatCardProps) => (
+  <div className="bg-white p-6 rounded-2xl border border-gray-100 duration-200">
+    <div className="flex justify-between items-start">
       <div>
-        <p className="text-gray-600 text-sm font-medium mb-1">{title}</p>
-        {loading ? (
-          <div className="h-[300px] flex items-center justify-center text-gray-500">
-            Loading ...
-          </div>
-        ) : (
-          <p className="text-3xl font-bold text-gray-900">{value}</p>
-        )}
-        {trend && !loading && (
-          <p className="text-sm text-green-600 font-medium mt-2 flex items-center">
-            <TrendingUp className="w-4 h-4 mr-1" />
-            {trend}
-          </p>
-        )}
+        <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+        <h3 className="text-3xl font-bold text-gray-900">{value}</h3>
       </div>
-      <div className={`p-4 rounded-xl ${color}`}>
-        <Icon className="w-8 h-8 text-white" />
+      <div className={`p-3 rounded-xl ${color}`}>
+        <Icon className="w-6 h-6 text-white" />
       </div>
     </div>
+    {trend && (
+      <div className="mt-4 flex items-center text-sm">
+        <span className="text-emerald-600 font-medium flex items-center bg-emerald-50 px-2 py-0.5 rounded-full">
+          <TrendingUp className="w-3 h-3 mr-1" /> {trend}
+        </span>
+        <span className="text-gray-400 ml-2">from yesterday</span>
+      </div>
+    )}
   </div>
 );
 
-const AdminDashboardContent: React.FC = () => {
-  const context = useOutletContext<{ agentId: string }>();
-  const agentId = context?.agentId;
+const AdminDashboard = () => {
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ["adminDashboard"],
+    queryFn: async (): Promise<DashboardStats> => {
+      const { data } = await api.get("/api/admin/dashboard");
+      return data.stats;
+    },
+  });
 
-  const { activeCases, pendingCases, closedCases, stats, loading, error } = useAdminCasesStore();
+  if (isLoading || !stats) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  const { refetch } = useFetchAdminCases(agentId);
-
-  // Prepare data for charts
-  const caseDistributionData = [
-    { name: 'Active', value: activeCases.length },
-    { name: 'Closed', value: closedCases.length },
-    { name: 'Pending', value: pendingCases.length },
+  const caseData: CaseData[] = [
+    { name: "Active", value: stats.cases.activeCases, color: COLORS.primary },
+    { name: "Pending", value: stats.cases.pendingCases, color: COLORS.warning },
+    {
+      name: "Resolved",
+      value: stats.cases.resolvedCases,
+      color: COLORS.success,
+    },
+    {
+      name: "Rejected",
+      value: stats.cases.rejectedCases,
+      color: COLORS.danger,
+    },
   ];
 
-  const totalCases = stats.total || 1;
-
-  // Calculate percentages for summary stats
-  const resolutionRate = Math.round((stats.resolved / totalCases) * 100);
-  const pendingRate = Math.round((stats.pending / totalCases) * 100);
+  const userData: UserData[] = [
+    { name: "Customers", count: stats.users.customers },
+    { name: "Agents", count: stats.users.agents },
+    { name: "Admins", count: stats.users.admins },
+  ];
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      {/* Header with refresh button */}
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-          <p className="text-gray-600">
-            {loading
-              ? 'Loading data...'
-              : "Welcome back! Here's what's happening with your cases today."}
-          </p>
-        </div>
-        <button
-          onClick={() => refetch()}
-          disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 text-gray-900 rounded-lg shadow border border-gray-200 hover:bg-gray-50 disabled:opacity-50">
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
-        </button>
+    <div className="min-h-screen bg-gray-50/50 p-8 font-sans">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          Dashboard Overview
+        </h1>
+        <p className="text-gray-500 mt-2">
+          Welcome back. Here's what's happening today.
+        </p>
       </div>
 
-      {/* Error message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-medium">Error loading data</p>
-            <p className="text-sm">{error}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <MetricCard
-          title="Active Cases"
-          value={stats.active}
-          icon={Activity}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard
+          title="Total Cases"
+          value={stats.cases.total}
+          icon={FileText}
           color="bg-blue-500"
-          trend="+12% from last month"
-          loading={loading}
+          trend={`+${stats.today.newCases}`}
         />
-        <MetricCard
-          title="Closed Cases"
-          value={stats.resolved}
-          icon={TrendingUp}
-          color="bg-green-500"
-          trend="+8% from last month"
-          loading={loading}
+        <StatCard
+          title="Active Issues"
+          value={stats.cases.activeCases}
+          icon={AlertOctagon}
+          color="bg-indigo-500"
         />
-        <MetricCard
-          title="Pending Cases"
-          value={stats.pending}
-          icon={Clock}
-          color="bg-yellow-500"
-          trend="-5% from last month"
-          loading={loading}
+        <StatCard
+          title="Total Customers"
+          value={stats.users.customers}
+          icon={Users}
+          color="bg-purple-500"
+        />
+        <StatCard
+          title="New Messages"
+          value={stats.today.newMessages}
+          icon={MessageSquare}
+          color="bg-pink-500"
+          trend="Today"
         />
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Area Chart  */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Cases Trend Over Time</h3>
-          {loading ? (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Loading ...
-            </div>
-          ) : error ? (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Could not load trend data
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart
-                data={[
-                  {
-                    month: 'Current',
-                    Active: stats.active,
-                    Closed: stats.resolved,
-                    Pending: stats.pending,
-                  },
-                  {
-                    month: 'Prev',
-                    Active: Math.round(stats.active * 0.88),
-                    Closed: Math.round(stats.resolved * 0.92),
-                    Pending: Math.round(stats.pending * 1.05),
-                  },
-                ]}>
-                <defs>
-                  <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorPending" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 col-span-2 lg:col-span-1">
+          <h2 className="text-lg font-bold text-gray-900 mb-6">Case Status</h2>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={caseData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {caseData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.color}
+                      stroke="none"
+                    />
+                  ))}
+                </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                   }}
                 />
-                <Area
-                  type="monotone"
-                  dataKey="Active"
-                  stroke="#3B82F6"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorActive)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Closed"
-                  stroke="#10B981"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorClosed)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Pending"
-                  stroke="#F59E0B"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorPending)"
-                />
-              </AreaChart>
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+              </PieChart>
             </ResponsiveContainer>
-          )}
+          </div>
         </div>
 
-        {/* Pie Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Current Cases Distribution</h3>
-          {loading ? (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Loading ...
-            </div>
-          ) : error ? (
-            <div className="h-[300px] flex items-center justify-center text-gray-500">
-              Could not load distribution data
-            </div>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={caseDistributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={120}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                    {caseDistributionData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Custom Legend */}
-              <div className="flex flex-wrap justify-center gap-4 mt-4">
-                {caseDistributionData.map((entry, index) => (
-                  <div key={entry.name} className="flex items-center">
-                    <div
-                      className="w-4 h-4 rounded-full mr-2"
-                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                    />
-                    <span className="text-sm text-gray-700 font-medium">
-                      {entry.name}: {entry.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 col-span-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-6">
+            User Demographics
+          </h2>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={userData} barSize={60}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#f1f5f9"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 12 }}
+                />
+                <Tooltip
+                  cursor={{ fill: "#f8fafc" }}
+                  contentStyle={{
+                    borderRadius: "12px",
+                    border: "none",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                  }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill={COLORS.primary}
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="mt-8 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Summary Statistics</h3>
-        {loading ? (
-          <div className="h-[300px] flex items-center justify-center text-gray-500">
-            Loading ...
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-4 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">
+              Need to create a new agent?
+            </h2>
+            <p className="text-blue-100">
+              Manage your team efficiently by adding new agents to departments.
+            </p>
           </div>
-        ) : error ? (
-          <div className="text-center text-gray-500 py-8">Could not load summary statistics</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
-              <p className="text-gray-600 text-sm">Total Cases</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">{resolutionRate}%</p>
-              <p className="text-gray-600 text-sm">Resolution Rate</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-yellow-600">{pendingRate}%</p>
-              <p className="text-gray-600 text-sm">Pending Rate</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-purple-600">
-                {closedCases.length > 0 ? calculateAverageDaysToClose(closedCases) : 'N/A'}
-              </p>
-              <p className="text-gray-600 text-sm">Avg. Days to Close</p>
-            </div>
-          </div>
-        )}
+          <button className="bg-white text-blue-600 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition">
+            Add Agent
+          </button>
+        </div>
       </div>
     </div>
   );
 };
 
-function calculateAverageDaysToClose(cases: Case[]): string {
-  if (!cases.length) return '0';
-
-  const totalDays = cases.reduce((sum, singleCase) => {
-    if (!singleCase.createdAt || !singleCase.closedAt) return sum;
-    const created = new Date(singleCase.createdAt);
-    const closed = new Date(singleCase.closedAt);
-    const diffTime = Math.abs(closed.getTime() - created.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return sum + diffDays;
-  }, 0);
-
-  return (totalDays / cases.length).toFixed(1);
-}
-
-export default AdminDashboardContent;
+export default AdminDashboard;
