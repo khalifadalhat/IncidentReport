@@ -1,42 +1,117 @@
 const User = require("../models/user");
-const jwt = require("jsonwebtoken");
+const {
+  generatePassword,
+  sendCredentialsEmail,
+} = require("../utils/agentEmail");
 
-exports.createUser = async (req, res) => {
+exports.createAgent = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { fullname, email, department } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "Username already exists" });
+    if (!fullname || !email || !department) {
+      return res
+        .status(400)
+        .json({ error: "fullname, email, department required" });
     }
 
-    const newUser = new User({ email, password, role });
+    const exists = await User.findOne({ email });
+    if (exists) return res.status(400).json({ error: "Email already in use" });
 
-    await newUser.save();
+    const password = generatePassword();
 
-    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET);
-    newUser.token = token;
-    await newUser.save();
+    const agent = await User.create({
+      fullname,
+      email: email.toLowerCase(),
+      password,
+      role: "agent",
+      department,
+      isFirstLogin: true,
+    });
 
-    res.cookie("token", token, { httpOnly: true });
+    sendCredentialsEmail(
+      agent.email,
+      agent.fullname,
+      password,
+      agent.department
+    ).catch((err) => console.error("Email failed (agent created):", err));
+
     res.status(201).json({
-      user: {
-        id: newUser._id,
-        email: newUser.email,
-        role: newUser.role,
+      success: true,
+      message: "Agent created successfully",
+      agent: {
+        id: agent._id,
+        fullname: agent.fullname,
+        email: agent.email,
+        department: agent.department,
       },
-      token,
     });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Create agent error:", err);
+    res.status(500).json({ error: "Failed to create agent" });
   }
 };
 
-exports.getUsers = async (req, res) => {
+exports.getProfile = async (req, res) => {
+  res.json({
+    success: true,
+    user: req.user,
+  });
+};
+
+exports.updateProfile = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
-    res.status(200).json({ users });
+    const updates = req.body;
+    const requester = req.user; 
+
+    const allowedFields = {
+      admin: ["fullname", "phone", "location", "gender", "department", "role", "isActive", "profileImage", "liveLocation"],
+      supervisor: ["fullname", "phone", "location", "gender", "department", "role", "profileImage", "liveLocation"],
+      agent: ["fullname", "phone", "location", "gender", "profileImage", "liveLocation"],
+      customer: ["fullname", "phone", "location", "gender", "profileImage", "liveLocation"],
+    };
+
+    const allowed = allowedFields[requester.role];
+
+    if (!allowed)
+      return res.status(403).json({ error: "Unauthorized role" });
+
+    const userId = req.params.id || requester._id; 
+    const targetUser = await User.findById(userId);
+
+    if (!targetUser)
+      return res.status(404).json({ error: "User not found" });
+
+    if (requester.role !== "admin" && requester.role !== "supervisor") {
+      if (requester._id.toString() !== userId.toString()) {
+        return res.status(403).json({ error: "You can only update your own profile" });
+      }
+    }
+
+    if (requester.role === "supervisor" && targetUser.role === "admin") {
+      return res.status(403).json({ error: "Supervisors cannot update admin accounts" });
+    }
+
+    const filtered = {};
+    Object.keys(updates).forEach((key) => {
+      if (allowed.includes(key)) filtered[key] = updates[key];
+    });
+
+    const updatedUser = await User.findByIdAndUpdate(userId, filtered, { new: true })
+      .select("-password -__v");
+
+    res.json({ success: true, user: updatedUser });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Update profile error:", err);
+    res.status(500).json({ error: "Failed to update profile" });
   }
 };
+
+
+exports.getAgents = async (req, res) => {
+  const agents = await User.find({ role: "agent" }).select(
+    "fullname email department"
+  );
+  res.json({ success: true, agents });
+};
+
+module.exports = exports;
