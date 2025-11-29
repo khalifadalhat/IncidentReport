@@ -70,18 +70,18 @@ const AdminCases = () => {
   const { data: casesData, isLoading: casesLoading } = useQuery<ApiResponse>({
     queryKey: ["adminCases"],
     queryFn: (): Promise<ApiResponse> =>
-      api.get("/api/cases").then((res) => res.data),
+      api.get("/cases").then((res) => res.data),
   });
 
   const { data: agentsData } = useQuery<AgentsApiResponse>({
     queryKey: ["agents"],
     queryFn: (): Promise<AgentsApiResponse> =>
-      api.get("/api/users/agents").then((res) => res.data),
+      api.get("/users/agents").then((res) => res.data),
   });
 
   const assignMutation = useMutation({
     mutationFn: ({ caseId, agentId }: AssignAgentParams) =>
-      api.patch(`/api/cases/assign`, { agentId, caseId }),
+      api.patch(`/cases/assign`, { agentId, caseId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminCases"] });
     },
