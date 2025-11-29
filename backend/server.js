@@ -1,216 +1,267 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const http = require('http');
-const { Server } = require('socket.io');
-const connectDB = require('./config/db');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const cors = require("cors");
+require("dotenv").config();
 
-const customerRoutes = require('./routes/customerRoutes');
-const caseRoutes = require('./routes/caseRoutes');
-const agentRoutes = require('./routes/agentRoutes');
-const authRoutes = require('./routes/authRoutes');
-const userRoutes = require('./routes/userRoutes');
-const messageRoutes = require('./routes/messageRoutes');
-const chatHistoryRoutes = require('./routes/chatHistoryRoutes');
-const Message = require('./models/Message');
-const Case = require('./models/case');
-const jwt = require('jsonwebtoken');
+const connectDB = require("./config/db");
+const Message = require("./models/Message");
+const Case = require("./models/case");
+const User = require("./models/user");
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173'];
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+const caseRoutes = require("./routes/caseRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
+const {
+  notifyNewMessage,
+  notifyAgentAssigned,
+  notifyCaseAssigned,
+  notifyCaseStatusUpdate,
+} = require("./utils/notificationHelper");
 
 const app = express();
 const server = http.createServer(app);
 
-// CORS Configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-};
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : ["http://localhost:5173/"];
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 
-// Socket.IO CORS Config
+connectDB();
+
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/cases", caseRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api", uploadRoutes);
+
+const swaggerSpecs = require("./swagger");
+const swaggerUi = require("swagger-ui-express");
+
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpecs, {
+    explorer: true,
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  })
+);
+
+app.get("/api-docs-json", (req, res) => res.json(swaggerSpecs));
+if (process.env.NODE_ENV === "development" || process.env.SWAGGER_ENABLED) {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+}
+
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ['GET', 'POST'],
+    methods: ["GET", "POST"],
     credentials: true,
-  },
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000,
-    skipMiddlewares: true,
   },
 });
 
-connectDB();
-
-// Token verification helper
-const verifyToken = token => {
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET);
-  } catch (error) {
-    console.error('JWT verification error:', error);
-    return null;
-  }
-};
-
-// Case access verification helper
-const verifyCaseAccess = async (userId, caseId) => {
-  try {
-    const caseData = await Case.findById(caseId);
-    if (!caseData) return false;
-
-    // Check if user is the customer, assigned agent, or admin
-    return (
-      caseData.customer.equals(userId) ||
-      (caseData.assignedAgent && caseData.assignedAgent.equals(userId))
-    );
-  } catch (error) {
-    console.error('Error verifying case access:', error);
-    return false;
-  }
-};
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api', caseRoutes);
-app.use('/api/agents', agentRoutes);
-app.use('/api', userRoutes);
-app.use('/api', messageRoutes);
-app.use('/api', chatHistoryRoutes);
-
-// Authentication middleware
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("No token"));
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = decoded;
+    const user = await User.findById(decoded.userId);
+    if (!user || !user.isActive) return next(new Error("Invalid user"));
+
+    socket.user = {
+      userId: user._id.toString(),
+      role: user.role,
+      fullname: user.fullname || user.email.split("@")[0],
+    };
     next();
-  } catch (error) {
-    next(new Error('Authentication error'));
+  } catch (err) {
+    next(new Error("Authentication failed"));
   }
 });
 
-// Socket.IO Events
-io.on('connection', socket => {
-  console.log(`User connected: ${socket.user.userId}`);
-
+io.on("connection", (socket) => {
   socket.join(socket.user.userId);
 
-  socket.on('joinCase', async caseId => {
+  socket.on("joinCase", async (caseId) => {
     try {
-      const hasAccess = await verifyCaseAccess(socket.user.userId, caseId);
-      if (!hasAccess) return socket.emit('error', 'Unauthorized access');
+      const caseData = await Case.findById(caseId);
+      if (!caseData) return socket.emit("error", "Case not found");
+
+      const isCustomer = caseData.customer.toString() === socket.user.userId;
+      const isAgent = caseData.assignedAgent?.toString() === socket.user.userId;
+
+      if (!isCustomer && !isAgent) {
+        return socket.emit("error", "Unauthorized");
+      }
 
       socket.join(caseId);
-      const messages = await Message.find({ case: caseId }).sort({ timestamp: 1 }).limit(50);
 
-      socket.emit('initialMessages', messages);
-    } catch (error) {
-      socket.emit('error', 'Failed to join case');
+      const messages = await Message.find({ case: caseId })
+        .sort({ timestamp: 1 })
+        .limit(50);
+
+      socket.emit("initialMessages", messages);
+    } catch (err) {
+      socket.emit("error", "Failed to join case");
     }
   });
 
-  socket.on('sendMessage', async msg => {
+  socket.on("updateCaseStatus", async ({ caseId, status }) => {
     try {
-      if (!msg.text || !msg.caseId) {
-        return socket.emit('error', 'Invalid message format');
+      const caseData = await Case.findById(caseId);
+      if (!caseData) return socket.emit("error", "Case not found");
+
+      const isAgent = caseData.assignedAgent?.toString() === socket.user.userId;
+      const isAdmin = socket.user.role === "admin";
+
+      if (!isAgent && !isAdmin) {
+        return socket.emit("error", "Unauthorized");
       }
 
-      const hasAccess = await verifyCaseAccess(socket.user.userId, msg.caseId);
-      if (!hasAccess) return socket.emit('error', 'Unauthorized access');
-
-      const caseData = await Case.findById(msg.caseId);
-      const recipient = socket.user.role === 'agent' ? caseData.customer : caseData.assignedAgent;
-
-      console.log('Received message:', msg);
-
-      const newMessage = new Message({
-        sender: socket.user.userId,
-        senderModel: socket.user.role,
-        text: msg.text,
-        case: msg.caseId,
-        recipient,
-        recipientModel: socket.user.role === 'agent' ? 'customer' : 'agent',
-        read: socket.user.role === 'agent',
-        timestamp: new Date(),
-      });
-
-      await newMessage.save();
-      await Case.findByIdAndUpdate(msg.caseId, {
+      await Case.findByIdAndUpdate(caseId, {
+        status,
         updatedAt: new Date(),
-        lastMessage: newMessage._id,
       });
 
-      console.log('Saved message:', newMessage);
-      io.to(msg.caseId).emit('receiveMessage', newMessage);
+      await notifyCaseStatusUpdate(io, {
+        recipient: caseData.customer.toString(),
+        caseId,
+        status,
+        caseTitle: caseData.title,
+      });
 
-      if (recipient) {
-        io.to(recipient).emit('newMessageNotification', {
-          caseId: msg.caseId,
-          message: newMessage,
+      if (
+        caseData.assignedAgent &&
+        caseData.assignedAgent.toString() !== socket.user.userId
+      ) {
+        await notifyCaseStatusUpdate(io, {
+          recipient: caseData.assignedAgent.toString(),
+          caseId,
+          status,
+          caseTitle: caseData.title,
         });
       }
-    } catch (error) {
-      console.error('Message error:', error);
-      socket.emit('error', 'Failed to send message');
+
+      socket.emit("statusUpdateSuccess", { caseId, status });
+    } catch (err) {
+      console.error("Status update error:", err);
+      socket.emit("error", "Failed to update status");
     }
   });
 
-  socket.on('typing', caseId => {
-    socket.to(caseId).emit('userTyping', {
+  socket.on("sendMessage", async ({ caseId, text }) => {
+    try {
+      if (!text?.trim()) return;
+
+      const caseData = await Case.findById(caseId);
+      if (!caseData) return;
+
+      const isCustomer = caseData.customer.toString() === socket.user.userId;
+      const isAgent = caseData.assignedAgent?.toString() === socket.user.userId;
+      if (!isCustomer && !isAgent) return;
+
+      let recipientId = null;
+      let recipientRole = null;
+
+      if (isCustomer) {
+        recipientId = caseData.assignedAgent?.toString() || null;
+        recipientRole = "agent";
+      } else if (isAgent) {
+        recipientId = caseData.customer.toString();
+        recipientRole = "customer";
+      }
+
+      const message = await Message.create({
+        case: caseId,
+        sender: socket.user.userId,
+        senderRole: socket.user.role,
+        recipient: recipientId,
+        recipientRole: recipientRole,
+        text: text.trim(),
+        read: isAgent,
+      });
+
+      await Case.findByIdAndUpdate(caseId, {
+        updatedAt: new Date(),
+        lastMessage: message._id,
+      });
+
+      const messageData = {
+        _id: message._id.toString(),
+        case: message.case.toString(),
+        sender: message.sender.toString(),
+        senderRole: message.senderRole,
+        recipient: message.recipient?.toString() || null,
+        recipientRole: message.recipientRole,
+        text: message.text,
+        read: message.read,
+        timestamp: message.timestamp || message.createdAt,
+      };
+
+      io.to(caseId).emit("receiveMessage", message);
+
+      if (recipientId) {
+        await notifyNewMessage(io, {
+          recipient: recipientId,
+          caseId,
+          messageText: text.trim(),
+          senderName: socket.user.fullname,
+        });
+      }
+    } catch (err) {
+      console.error("Send message error:", err);
+      socket.emit("error", "Failed to send message");
+    }
+  });
+
+  socket.on("typing", ({ caseId, isTyping }) => {
+    socket.to(caseId).emit("userTyping", {
       userId: socket.user.userId,
-      name: socket.user.name,
+      fullname: socket.user.fullname,
+      isTyping,
     });
   });
 
-  socket.on('markMessagesRead', async ({ caseId }) => {
-    try {
-      await Message.updateMany(
-        {
-          case: caseId,
-          recipient: socket.user.userId,
-          read: false,
-        },
-        { $set: { read: true } }
-      );
-
-      io.to(caseId).emit('messagesRead', {
-        caseId,
-        userId: socket.user.userId,
-      });
-    } catch (error) {
-      console.error('Read receipt error:', error);
-    }
+  socket.on("markAsRead", async (caseId) => {
+    await Message.updateMany(
+      { case: caseId, recipient: socket.user.userId, read: false },
+      { read: true }
+    );
+    io.to(caseId).emit("messagesRead", { userId: socket.user.userId });
   });
 
-  socket.on('leaveCase', caseId => {
-    socket.leave(caseId);
-    console.log(`User left case ${caseId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.user.userId}`);
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.user.fullname}`);
   });
 });
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(500).json({ error: "Something went wrong!" });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
