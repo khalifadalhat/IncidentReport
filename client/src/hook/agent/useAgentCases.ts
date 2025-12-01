@@ -14,7 +14,7 @@ export const useFetchAgentCases = (agentId?: string, status?: string) => {
         setLoading(true);
         setError(null);
 
-        const url = status ? `/api/cases/my?status=${status}` : `/api/cases/my`;
+        const url = status ? `/cases/my?status=${status}` : `/cases/my`;
         const response = await api.get(url);
 
         const agentCases = response.data.cases;
