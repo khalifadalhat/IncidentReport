@@ -64,6 +64,10 @@ exports.getMyCases = async (req, res) => {
         ? { customer: req.user._id }
         : { assignedAgent: req.user._id };
 
+    if (status) {
+      filter.status = status;
+    }
+
     const cases = await Case.find(filter)
       .populate("customer", "fullname email")
       .populate("assignedAgent", "fullname department")
@@ -136,10 +140,10 @@ exports.assignCase = async (req, res) => {
 
     const updatedCase = await Case.findByIdAndUpdate(
       caseId,
-      { 
-        assignedAgent: agentId, 
-        status: "in-progress", 
-        updatedAt: new Date() 
+      {
+        assignedAgent: agentId,
+        status: "in-progress",
+        updatedAt: new Date(),
       },
       { new: true }
     ).populate("customer assignedAgent");
@@ -153,7 +157,9 @@ exports.assignCase = async (req, res) => {
     await notifyAgentAssigned(io, {
       recipient: updatedCase.customer._id,
       caseId: updatedCase._id,
-      agentName: updatedCase.assignedAgent.fullname || updatedCase.assignedAgent.email.split("@")[0],
+      agentName:
+        updatedCase.assignedAgent.fullname ||
+        updatedCase.assignedAgent.email.split("@")[0],
       caseTitle: updatedCase.title || updatedCase.issue,
     });
 
@@ -161,14 +167,15 @@ exports.assignCase = async (req, res) => {
       recipient: agentId,
       caseId: updatedCase._id,
       caseTitle: updatedCase.title || updatedCase.issue,
-      customerName: updatedCase.customer.fullname || updatedCase.customer.email.split("@")[0],
+      customerName:
+        updatedCase.customer.fullname ||
+        updatedCase.customer.email.split("@")[0],
     });
 
-    res.json({ 
-      success: true, 
-      case: updatedCase 
+    res.json({
+      success: true,
+      case: updatedCase,
     });
-
   } catch (err) {
     console.error("Assign case error:", err);
     res.status(500).json({ error: "Failed to assign case" });
