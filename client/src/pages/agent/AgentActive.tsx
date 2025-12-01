@@ -38,10 +38,10 @@ const AgentActive: React.FC = () => {
 
   const resolvedCaseMutation = useMutation({
     mutationFn: (caseId: string) => {
-      if (!agentId) {
-        console.error("Agent ID is not available for resolving case.");
-        toast.error("Agent ID is missing. Please log in again.");
-        return Promise.reject(new Error("Agent ID missing"));
+      if (!caseId) {
+        console.error("Case ID is not available for resolving case.");
+        toast.error("Case ID is missing. Please log in again.");
+        return Promise.reject(new Error("Case ID missing"));
       }
       return api.patch(`/cases/${caseId}/status`, {
         status: "resolved",
