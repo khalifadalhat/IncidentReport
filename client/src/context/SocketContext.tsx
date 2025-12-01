@@ -17,7 +17,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Try to get token from either cookie or localStorage
     let token = Cookie.get("token");
 
     if (!token) {
@@ -28,9 +27,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }
 
-    console.log("🔑 Token found:", token ? "YES" : "NO");
-    console.log("🔑 Token preview:", token?.substring(0, 20) + "...");
-
     if (!token) {
       console.error("❌ No token found for socket connection");
       return;
@@ -38,10 +34,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     let SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-    // Strip /api from the URL
     SOCKET_URL = SOCKET_URL.replace(/\/api\/?$/, "");
-
-    console.log("🌐 Connecting to:", SOCKET_URL);
 
     const newSocket = io(SOCKET_URL, {
       auth: {
@@ -55,7 +48,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     newSocket.on("connect", () => {
-      console.log("✅ Socket connected successfully:", newSocket.id);
       setIsConnected(true);
     });
 
@@ -74,13 +66,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("❌ Socket error:", error);
     });
 
-    // Log initial connection attempt
-    console.log("🔌 Socket instance created, attempting connection...");
-
     setSocket(newSocket);
 
     return () => {
-      console.log("🔌 Cleaning up socket connection");
       newSocket.close();
     };
   }, []);
