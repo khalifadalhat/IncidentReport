@@ -45,7 +45,6 @@ const AgentActive: React.FC = () => {
       }
       return api.patch(`/cases/${caseId}/status`, {
         status: "resolved",
-        agentId: agentId,
       });
     },
     onSuccess: () => {
