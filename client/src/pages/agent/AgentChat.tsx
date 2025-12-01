@@ -36,7 +36,11 @@ const AgentChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (activeCases.length > 0 && !selectedCase) {
@@ -55,23 +59,60 @@ const AgentChat = () => {
 
     const handleReceiveMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
+      setIsOtherUserTyping(false);
+    };
+
+    const handleUserTyping = ({ userId, fullname, isTyping }: { userId: string; fullname: string; isTyping: boolean }) => {
+      if (userId !== agentId) {
+        setIsOtherUserTyping(isTyping);
+        setTypingUser(fullname);
+        
+        if (isTyping) {
+          setTimeout(() => {
+            setIsOtherUserTyping(false);
+          }, 5000);
+        }
+      }
     };
 
     socket.on("initialMessages", handleInitialMessages);
     socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("userTyping", handleUserTyping);
 
     return () => {
       socket.off("initialMessages", handleInitialMessages);
       socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("userTyping", handleUserTyping);
     };
-  }, [socket, isConnected, selectedCase]);
+  }, [socket, isConnected, selectedCase, agentId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+
+    if (!socket || !selectedCase) return;
+
+    socket.emit("typing", { caseId: selectedCase._id, isTyping: value.length > 0 });
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    if (value.length > 0) {
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing", { caseId: selectedCase._id, isTyping: false });
+      }, 2000);
+    }
+  };
+
   const sendMessage = () => {
     if (!input.trim() || !socket || !selectedCase) return;
+
+    socket.emit("typing", { caseId: selectedCase._id, isTyping: false });
 
     const messageData = {
       caseId: selectedCase._id,
@@ -85,12 +126,8 @@ const AgentChat = () => {
   const handleCaseSelect = (caseItem: Case) => {
     setSelectedCase(caseItem);
     setMessages([]);
+    setIsOtherUserTyping(false);
   };
-
-  useEffect(() => {
-    console.log("Socket status:", { socket, isConnected });
-    console.log("Selected case:", selectedCase);
-  }, [socket, isConnected, selectedCase]);
 
   if (casesLoading) {
     return (
@@ -264,6 +301,23 @@ const AgentChat = () => {
                   );
                 })
               )}
+              
+              {/* Typing Indicator */}
+              {isOtherUserTyping && (
+                <div className="flex justify-start">
+                  <div className="max-w-xs md:max-w-md px-5 py-3 rounded-2xl shadow-sm bg-white border border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      <span className="text-xs text-gray-500">{typingUser} is typing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div ref={messagesEndRef} />
             </div>
             {/* Input Area */}
@@ -277,7 +331,7 @@ const AgentChat = () => {
                 </button>
                 <input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyPress={(e) =>
                     e.key === "Enter" && !e.shiftKey && sendMessage()
                   }
