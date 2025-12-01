@@ -87,6 +87,11 @@ const AgentChat = () => {
     setMessages([]);
   };
 
+  useEffect(() => {
+    console.log("Socket status:", { socket, isConnected });
+    console.log("Selected case:", selectedCase);
+  }, [socket, isConnected, selectedCase]);
+
   if (casesLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50">
