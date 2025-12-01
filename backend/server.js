@@ -83,21 +83,17 @@ const io = new Server(server, {
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    console.log("🔐 Socket auth attempt, token present:", !!token);
 
     if (!token) {
-      console.log("❌ No token provided");
       return next(new Error("No token"));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("✅ Token decoded:", decoded.userId, decoded.role);
 
     const user = await User.findById(decoded.userId);
     console.log("👤 User found:", !!user, user?.email);
 
     if (!user || !user.isActive) {
-      console.log("❌ Invalid or inactive user");
       return next(new Error("Invalid user"));
     }
 
@@ -107,7 +103,6 @@ io.use(async (socket, next) => {
       fullname: user.fullname || user.email.split("@")[0],
     };
 
-    console.log("✅ Socket authenticated for:", socket.user.fullname);
     next();
   } catch (err) {
     console.error("❌ Socket auth error:", err.message);
