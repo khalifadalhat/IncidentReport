@@ -63,6 +63,8 @@ Traditional incident reporting systems are often:
 ### 👥 For Citizens/Customers
 
 - 📝 **Easy Reporting** - Submit incidents in under 2 minutes
+- 🔐 **Secure Account Creation** - Email OTP verification for account registration
+- 🔑 **Password Recovery** - Secure password reset via email OTP verification
 - 🕵️ **Anonymous Options** - Report without revealing identity
 - 💬 **Direct Communication** - Chat with assigned officers in real-time
 - 📍 **Location Tracking** - Automatic GPS location capture
@@ -129,6 +131,7 @@ Traditional incident reporting systems are often:
 
 ### 🛡️ Security & Authentication
 - **JWT Authentication** - Secure token-based authentication
+- **OTP Verification** - Email-based OTP for account creation and password reset
 - **Password Hashing** - Bcrypt with salt rounds
 - **Cookie-Based Sessions** - Secure HTTP-only cookies
 - **Role-Based Permissions** - Granular access control
@@ -225,7 +228,10 @@ Traditional incident reporting systems are often:
    CLOUDINARY_API_KEY=your-api-key
    CLOUDINARY_API_SECRET=your-api-secret
    
-   # Email (optional)
+   # Email (required for OTP functionality)
+   GMAIL_USER=your-email@gmail.com
+   GMAIL_APP_PASSWORD=your-gmail-app-password
+   # Alternative email service (optional)
    EMAIL_HOST=smtp.gmail.com
    EMAIL_PORT=587
    EMAIL_USER=your-email@gmail.com
@@ -323,8 +329,21 @@ http://localhost:5000/api-docs
 User login/register (Customer/Agent/Admin)
 
 - `POST /api/auth/login` - Login user (Customer/Agent/Admin)
-- `POST /api/auth/register` - Register new customer
 - `POST /api/auth/admin/create` - Register new Admin
+
+**Account Registration with OTP:**
+- `POST /api/auth/register/request-otp` - Request OTP for account registration (sends 6-digit OTP to email)
+- `POST /api/auth/register/verify-otp` - Verify OTP for registration (validates email and OTP)
+- `POST /api/auth/register` - Complete customer registration (after OTP verification)
+
+**Password Reset with OTP:**
+- `POST /api/auth/forgot-password` - Request password reset OTP (sends 6-digit OTP to email)
+- `POST /api/auth/forgot-password/verify-otp` - Verify password reset OTP (validates email and OTP)
+- `POST /api/auth/reset-password` - Reset password (after OTP verification)
+
+**Password Change (Authenticated):**
+- `POST /api/auth/change-password/request-otp` - Request OTP for password change (requires authentication)
+- `POST /api/auth/change-password` - Change password with OTP (requires authentication)
 
 #### Cases
 Support cases/tickets management
@@ -417,11 +436,18 @@ The welcoming landing page that introduces visitors to the Incident Report platf
 - Track case status and progress
 - Monitor resolution timeline
 
+#### My Cases (Mobile View)
+![User Cases Mobile](./screenshots/userCasesMobile.PNG)
+- Mobile-optimized case management interface
+- Responsive design for on-the-go access
+- Touch-friendly navigation
+
 #### Real-Time Chat
-![User Chat](./screenshots/UserChat.png)
+![User Chat Mobile](./screenshots/UserChatMobile.PNG)
 - Direct communication with assigned agents
 - Real-time messaging via Socket.io
 - File and image sharing support
+- Mobile-optimized chat interface
 
 ---
 
@@ -438,6 +464,13 @@ The welcoming landing page that introduces visitors to the Incident Report platf
 - Manage all assigned incidents
 - Filter by status (pending, active, resolved)
 - Quick case details and actions
+
+#### Agent Chat
+![Agent Chat](./screenshots/AgentChat.png)
+- Real-time communication with customers
+- Multi-case chat management
+- File sharing and media support
+- Instant message delivery
 
 #### Agent Settings
 ![Agent Settings](./screenshots/AgentSettings.png)
