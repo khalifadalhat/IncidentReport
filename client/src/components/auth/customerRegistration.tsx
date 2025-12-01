@@ -75,7 +75,7 @@ const CustomerRegistration: React.FC = () => {
     setLoading(true);
     try {
       const { ...submitData } = formData;
-      const response = await api.post('/api/auth/register', submitData);
+      const response = await api.post('/auth/register', submitData);
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('customer', JSON.stringify(response.data.customer));
