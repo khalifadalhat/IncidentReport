@@ -20,6 +20,12 @@ export default function ChatWithAgent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+
+  // Typing indicator state
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState("");
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,14 +39,28 @@ export default function ChatWithAgent() {
 
     const handleReceiveMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
+      setIsOtherUserTyping(false);
+    };
+
+    const handleUserTyping = ({ fullname, isTyping }: { fullname: string; isTyping: boolean }) => {
+      setIsOtherUserTyping(isTyping);
+      setTypingUser(fullname);
+
+      if (isTyping) {
+        setTimeout(() => {
+          setIsOtherUserTyping(false);
+        }, 5000);
+      }
     };
 
     socket.on("initialMessages", handleInitialMessages);
     socket.on("receiveMessage", handleReceiveMessage);
+    socket.on("userTyping", handleUserTyping);
 
     return () => {
       socket.off("initialMessages", handleInitialMessages);
       socket.off("receiveMessage", handleReceiveMessage);
+      socket.off("userTyping", handleUserTyping);
       socket.emit("leaveCase", currentCaseId);
     };
   }, [socket, isConnected, currentCaseId]);
@@ -49,8 +69,27 @@ export default function ChatWithAgent() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+
+    if (!socket || !currentCaseId) return;
+
+    socket.emit("typing", { caseId: currentCaseId, isTyping: value.length > 0 });
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    if (value.length > 0) {
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing", { caseId: currentCaseId, isTyping: false });
+      }, 2000);
+    }
+  };
+
   const sendMessage = () => {
     if (!input.trim() || !socket || !currentCaseId) return;
+
+    socket.emit("typing", { caseId: currentCaseId, isTyping: false });
 
     socket.emit("sendMessage", {
       caseId: currentCaseId,
@@ -114,6 +153,17 @@ export default function ChatWithAgent() {
           );
         })}
 
+        {/* Typing Indicator */}
+        {isOtherUserTyping && (
+          <div className="flex justify-start">
+            <div className="max-w-xs sm:max-w-md px-4 py-2 rounded-2xl shadow-sm bg-white border border-gray-200">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500">{typingUser} is typing...</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -139,7 +189,7 @@ export default function ChatWithAgent() {
 
           <input
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
