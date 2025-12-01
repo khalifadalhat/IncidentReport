@@ -36,8 +36,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Your backend URL - make sure this is correct
-    const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    let SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+    // Strip /api from the URL
+    SOCKET_URL = SOCKET_URL.replace(/\/api\/?$/, "");
+
     console.log("🌐 Connecting to:", SOCKET_URL);
 
     const newSocket = io(SOCKET_URL, {
