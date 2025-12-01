@@ -5,12 +5,13 @@ import {
   FiMessageSquare,
   FiUser,
   FiClock,
+  FiMenu,
+  FiX,
 } from "react-icons/fi";
 import { format } from "date-fns";
 import { useSocket } from "@/context/SocketContext";
 import EmojiPicker from "emoji-picker-react";
 import { useCustomerStore } from "@/store/useCustomerStore";
-import Cookie from "js-cookie";
 
 interface Message {
   _id: string;
@@ -26,11 +27,8 @@ const ChatWithAgent = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const userData = Cookie.get("userData");
-  const user = userData ? JSON.parse(userData) : null;
-  const currentUserId = user?.sub;
 
   useEffect(() => {
     if (!socket || !isConnected || !currentCaseId) return;
@@ -42,9 +40,6 @@ const ChatWithAgent = () => {
     };
 
     const handleReceiveMessage = (msg: Message) => {
-      console.log("Received message:", msg);
-      console.log("Sender:", msg.sender);
-      console.log("Current User:", currentUserId);
       setMessages((prev) => [...prev, msg]);
     };
 
@@ -77,18 +72,21 @@ const ChatWithAgent = () => {
 
   if (!currentCaseId) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center p-10 bg-white rounded-2xl shadow-lg">
-          <FiMessageSquare className="mx-auto text-6xl text-gray-300 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 p-4">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-md w-full">
+          <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <FiMessageSquare className="text-white text-3xl" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
             No Active Case
           </h2>
           <p className="text-gray-600 mb-6">
-            Please create a support request first to start chatting
+            Please create a support request first to start chatting with our
+            agents
           </p>
           <button
             onClick={() => window.history.back()}
-            className="bg-black text-white px-8 py-3 rounded-xl hover:bg-gray-800 transition"
+            className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-8 py-3 rounded-xl hover:shadow-lg transform hover:scale-105 transition-all duration-300 font-medium w-full"
           >
             Go Back
           </button>
@@ -98,132 +96,222 @@ const ChatWithAgent = () => {
   }
 
   return (
-    <div className="h-screen flex bg-gray-50">
-      <div className="w-80 bg-white border-r flex flex-col">
-        <div className="p-4 border-b bg-black text-white">
-          <h2 className="text-xl font-bold">Your Support Case</h2>
-          <p className="text-sm opacity-90">Live chat with agent</p>
+    <div className="h-screen flex flex-col lg:flex-row bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 hover:bg-blue-700 rounded-lg transition"
+          >
+            {isSidebarOpen ? (
+              <FiX className="text-xl" />
+            ) : (
+              <FiMenu className="text-xl" />
+            )}
+          </button>
+          <div>
+            <h1 className="font-bold text-lg">Support Chat</h1>
+            <p className="text-sm opacity-90">
+              Case #{currentCaseId.slice(-6)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-3 h-3 rounded-full ${
+              isConnected ? "bg-green-400 animate-pulse" : "bg-red-400"
+            }`}
+          />
+          <span className="text-sm">{isConnected ? "Live" : "Offline"}</span>
+        </div>
+      </div>
+
+      {/* Sidebar - Mobile Overlay & Desktop Fixed */}
+      <div
+        className={`${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40 w-80 bg-white border-r flex flex-col transform transition-transform duration-300 ease-in-out`}
+      >
+        <div className="p-4 border-b bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold">Your Support Case</h2>
+              <p className="text-sm opacity-90">Live chat with agent</p>
+            </div>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 hover:bg-blue-700 rounded-lg"
+            >
+              <FiX className="text-xl" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="bg-gray-50 p-4 rounded-lg border">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
             <div className="flex items-start justify-between mb-3">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                <FiUser className="text-black" />
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg flex items-center justify-center">
+                  <FiUser className="text-white text-sm" />
+                </div>
                 Your Case
               </h3>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+              <span className="text-xs bg-gradient-to-r from-green-100 to-green-50 text-green-700 px-3 py-1 rounded-full font-medium">
                 Active
               </span>
             </div>
-            <p className="text-sm text-gray-600 mb-3">
-              You are connected to a support agent
+            <p className="text-sm text-gray-600 mb-4">
+              You are connected to a support agent who will help resolve your
+              issue.
             </p>
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span className="bg-gray-100 px-2 py-1 rounded">Support</span>
-              <span className="flex items-center gap-1">
-                <FiClock />
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-600">
+              <span className="bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-1.5 rounded-full">
+                Support Ticket
+              </span>
+              <span className="flex items-center gap-1 bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-1.5 rounded-full">
+                <FiClock className="text-blue-600" />
                 {format(new Date(), "MMM d, h:mm a")}
               </span>
             </div>
           </div>
 
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-800 mb-2">Need Help?</h4>
-            <p className="text-sm text-blue-600">
+          <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+            <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+              <span className="w-6 h-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white text-sm">
+                ?
+              </span>
+              Need Help?
+            </h4>
+            <p className="text-sm text-blue-700">
               Our support team is here to help you. Describe your issue in
-              detail for better assistance.
+              detail for faster and better assistance.
             </p>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs text-blue-600">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-full"></div>
+                Be specific about your issue
+              </div>
+              <div className="flex items-center gap-2 text-xs text-blue-600">
+                <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-full"></div>
+                Share relevant details
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
-        <div className="bg-white border-b p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                A
+        {/* Chat Header - Desktop */}
+        <div className="hidden lg:block bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 shadow-lg">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <span className="text-white font-bold text-2xl">A</span>
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Support Agent</h2>
-                <p className="text-sm text-gray-600">Online • Ready to help</p>
+                <h2 className="text-2xl font-bold">Support Agent</h2>
+                <p className="opacity-90">Online • Ready to help you now</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-lg font-medium">
                 Case #{currentCaseId.slice(-6)}
               </p>
-              <div className="flex items-center gap-2 justify-end mt-1">
-                <span className="text-xs text-gray-500">
-                  {isConnected ? "Connected" : "Disconnected"}
-                </span>
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                  }`}
-                ></div>
+              <div className="flex items-center gap-3 justify-end mt-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      isConnected ? "bg-green-400 animate-pulse" : "bg-red-400"
+                    }`}
+                  />
+                  <span className="text-sm">
+                    {isConnected ? "Connected" : "Disconnected"}
+                  </span>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="mt-3 bg-gray-50 p-3 rounded-lg">
-            <p className="text-sm text-gray-700">
-              <strong>Status:</strong> Connected to support team
-            </p>
-            <div className="flex gap-3 mt-2 text-xs text-gray-600">
-              <span>💬 Live chat support</span>
-              <span>⏱️ Real-time responses</span>
             </div>
           </div>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gradient-to-b from-white to-blue-50/30">
           {messages.length === 0 ? (
-            <div className="text-center text-gray-500 py-10">
-              <FiMessageSquare className="mx-auto text-6xl mb-4 opacity-30" />
-              <p>No messages yet. Start the conversation!</p>
-              <p className="text-sm mt-2">The agent will join shortly...</p>
+            <div className="flex flex-col items-center justify-center h-full text-center py-10 px-4">
+              <div className="w-24 h-24 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl flex items-center justify-center mb-6">
+                <FiMessageSquare className="text-white text-4xl" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                Start Your Conversation
+              </h3>
+              <p className="text-gray-600 max-w-md">
+                No messages yet. Start chatting with our support agent. They'll
+                help you resolve your issue quickly.
+              </p>
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl">
+                <p className="text-sm text-blue-700">
+                  💡 <strong>Tip:</strong> Describe your issue clearly for
+                  faster assistance
+                </p>
+              </div>
             </div>
           ) : (
-            messages.map((msg) => {
-              // For customer chat, align based on who sent the message
-              const isMyMessage = msg.senderRole === "customer";
-              
-              return (
-                <div
-                  key={msg._id}
-                  className={`flex ${
-                    isMyMessage ? "justify-end" : "justify-start"
-                  }`}
-                >
+            <>
+              {messages.map((msg) => {
+                const isMyMessage = msg.senderRole === "customer";
+
+                return (
                   <div
-                    className={`max-w-xs md:max-w-md px-5 py-3 rounded-2xl shadow-sm ${
-                      isMyMessage
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-gray-200 text-gray-800"
+                    key={msg._id}
+                    className={`flex ${
+                      isMyMessage ? "justify-end" : "justify-start"
                     }`}
                   >
-                    <p className="break-words">{msg.text}</p>
-                    <p className="text-xs opacity-70 mt-2">
-                      {format(new Date(msg.timestamp), "h:mm a")}
-                    </p>
+                    <div
+                      className={`max-w-xs sm:max-w-md lg:max-w-lg px-5 py-3 rounded-2xl shadow-sm ${
+                        isMyMessage
+                          ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white"
+                          : "bg-white border border-gray-200 text-gray-800"
+                      }`}
+                    >
+                      <p className="break-words text-sm lg:text-base">
+                        {msg.text}
+                      </p>
+                      <p
+                        className={`text-xs mt-2 ${
+                          isMyMessage ? "opacity-80" : "text-gray-500"
+                        }`}
+                      >
+                        {format(new Date(msg.timestamp), "h:mm a")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div className="bg-white border-t p-4 shadow-lg relative">
-          <div className="flex items-center gap-3 max-w-5xl mx-auto">
+          {showEmoji && (
+            <div className="absolute bottom-20 left-4 right-4 lg:left-1/2 lg:-translate-x-1/2 lg:max-w-md z-10">
+              <div className="bg-white rounded-xl shadow-2xl border">
+                <EmojiPicker
+                  onEmojiClick={(e) => setInput((i) => i + e.emoji)}
+                  width="100%"
+                  height={350}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 max-w-7xl mx-auto">
             <button
               onClick={() => setShowEmoji(!showEmoji)}
-              className="text-gray-500 hover:text-blue-600 transition"
+              className="text-gray-500 hover:text-blue-600 transition p-3 rounded-full hover:bg-blue-50"
             >
               <FiSmile className="text-2xl" />
             </button>
@@ -234,21 +322,36 @@ const ChatWithAgent = () => {
                 e.key === "Enter" && !e.shiftKey && sendMessage()
               }
               placeholder="Type your message to the support agent..."
-              className="flex-1 px-5 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              className="flex-1 px-5 py-3 lg:py-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm lg:text-base"
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || !isConnected}
-              className="bg-black text-white p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition transform hover:scale-105 active:scale-95"
+              className={`bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 ${
+                !input.trim() || !isConnected
+                  ? ""
+                  : "hover:shadow-lg transform hover:scale-105 active:scale-95"
+              }`}
             >
               <FiSend className="text-lg" />
             </button>
           </div>
-          {showEmoji && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10">
-              <EmojiPicker onEmojiClick={(e) => setInput((i) => i + e.emoji)} />
+
+          <div className="flex items-center justify-between mt-3 text-xs text-gray-500 px-4">
+            <div className="flex items-center gap-4">
+              <span>Press Enter to send</span>
+              <span>•</span>
+              <span>Shift + Enter for new line</span>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <span>{isConnected ? "Connected" : "Disconnected"}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
