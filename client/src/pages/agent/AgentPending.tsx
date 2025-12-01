@@ -31,7 +31,7 @@ const AgentPending = () => {
   const { data: cases = [], isLoading } = useQuery<Case[]>({
     queryKey: ["pendingCases"],
     queryFn: (): Promise<Case[]> =>
-      api.get("/cases/my?status=pending").then((res) => res.data.cases),
+      api.get("/cases/my?status=in-progress").then((res) => res.data.cases),
   });
 
   const acceptMutation = useMutation({
