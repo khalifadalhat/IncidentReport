@@ -100,7 +100,7 @@ const CustomerRegistration: React.FC = () => {
 
     setLoading(true);
     try {
-      await api.post('/api/auth/register/request-otp', { email: formData.email });
+      await api.post('/auth/register/request-otp', { email: formData.email });
       showMessage('OTP sent to your email!', 'success');
       setStep('otp');
       startResendTimer();
@@ -123,7 +123,7 @@ const CustomerRegistration: React.FC = () => {
 
     setLoading(true);
     try {
-      await api.post('/api/auth/register/verify-otp', {
+      await api.post('/auth/register/verify-otp', {
         email: formData.email,
         otp,
       });
@@ -147,7 +147,7 @@ const CustomerRegistration: React.FC = () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword, ...submitData } = formData;
-      const response = await api.post('/api/auth/register', submitData);
+      const response = await api.post('/auth/register', submitData);
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -172,7 +172,7 @@ const CustomerRegistration: React.FC = () => {
     
     setLoading(true);
     try {
-      await api.post('/api/auth/register/request-otp', { email: formData.email });
+      await api.post('/auth/register/request-otp', { email: formData.email });
       showMessage('OTP resent to your email!', 'success');
       startResendTimer();
       setOtp('');
