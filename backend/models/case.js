@@ -52,7 +52,7 @@ const CaseSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "active", "resolved", "rejected"],
+      enum: ["pending", "in-progress", "active", "resolved", "rejected"],
       default: "pending",
       index: true,
     },
