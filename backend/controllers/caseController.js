@@ -59,6 +59,8 @@ exports.getAllCases = async (req, res) => {
 
 exports.getMyCases = async (req, res) => {
   try {
+    const { status } = req.query;
+
     const filter =
       req.user.role === "customer"
         ? { customer: req.user._id }
