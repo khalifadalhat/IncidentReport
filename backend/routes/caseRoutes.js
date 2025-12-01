@@ -61,7 +61,7 @@ const { auth, roleCheck } = require("../middleware/auth");
  *         name: status
  *         schema:
  *           type: string
- *           enum: ['pending', 'active', 'resolved', 'rejected']
+ *           enum: ['pending', 'active', 'in-progress', 'resolved', 'rejected']
  *     responses:
  *       200:
  *         description: All cases
@@ -91,7 +91,7 @@ const { auth, roleCheck } = require("../middleware/auth");
  *         name: status
  *         schema:
  *           type: string
- *           enum: ['pending', 'active', 'resolved', 'rejected']
+ *           enum: ['pending', 'active', 'in-progress', 'resolved', 'rejected']
  *     responses:
  *       200:
  *         description: My cases
@@ -159,7 +159,7 @@ const { auth, roleCheck } = require("../middleware/auth");
  *             properties:
  *               status:
  *                 type: string
- *                 enum: ['pending', 'active', 'resolved', 'rejected']
+ *                 enum: ['pending', 'active', 'in-progress', 'resolved', 'rejected']
  *     responses:
  *       200:
  *         description: Status updated
@@ -223,11 +223,6 @@ router.patch(
   roleCheck("agent"),
   caseController.updateStatus
 );
-router.patch(
-  "/assign",
-  auth,
-  roleCheck("admin"),
-  caseController.assignCase
-);
+router.patch("/assign", auth, roleCheck("admin"), caseController.assignCase);
 
 module.exports = router;
