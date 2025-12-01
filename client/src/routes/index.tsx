@@ -24,6 +24,8 @@ import MyCases from "@/pages/customer/MyCases";
 import RootLayout from "@/components/RootLayout";
 import AgentSettings from "@/pages/agent/AgentSettings";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import ForgotPassword from "@/components/auth/ForgotPassword";
+import ChangePassword from "@/components/auth/ChangePassword";
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +35,8 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: "login", element: <Login /> },
       { path: "signup", element: <CustomerRegistration /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "change-password", element: <ChangePassword /> },
 
       {
         path: "customer",
