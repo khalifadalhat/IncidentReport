@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
+import Cookie from "js-cookie";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -11,54 +12,45 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
 });
 
-
-const getAuthTokenFromStorage = () => {
-  try {
-    const storageData = localStorage.getItem("auth-storage");
-    if (storageData) {
-      const parsedData = JSON.parse(storageData);
-      return parsedData.state.token; 
-    }
-  } catch (e) {
-    console.error("Error parsing auth-storage:", e);
-  }
-  return null;
-};
-
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const token = getAuthTokenFromStorage(); 
-    
+    const token = Cookie.get("token");
+
     if (!token) {
-      console.warn("Socket connection skipped: JWT token not found in storage.");
+      console.error("No token found for socket connection");
       return;
     }
 
-    const newSocket = io(
-      import.meta.env.VITE_API_URL || "http://localhost:5000",
-      {
-        auth: { token },
-        transports: ["websocket"],
-        autoConnect: true,
-      }
-    );
+    const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+    const newSocket = io(SOCKET_URL, {
+      auth: {
+        token,
+      },
+      withCredentials: true,
+      transports: ["websocket", "polling"],
+    });
 
     newSocket.on("connect", () => {
+      console.log("Socket connected:", newSocket.id);
       setIsConnected(true);
     });
-    
 
-    newSocket.on("connect_error", (err) => {
-        console.error("Socket Connection Error:", err.message);
-        setIsConnected(false);
+    newSocket.on("disconnect", () => {
+      console.log("Socket disconnected");
+      setIsConnected(false);
     });
 
-    newSocket.on("disconnect", (reason) => {
-      console.log("Disconnected from server. Reason:", reason);
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error.message);
       setIsConnected(false);
+    });
+
+    newSocket.on("error", (error) => {
+      console.error("Socket error:", error);
     });
 
     setSocket(newSocket);
@@ -66,7 +58,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       newSocket.close();
     };
-  }, []); 
+  }, []);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>
