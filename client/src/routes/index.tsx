@@ -26,6 +26,7 @@ import AgentSettings from "@/pages/agent/AgentSettings";
 import AdminSettings from "@/pages/admin/AdminSettings";
 import ForgotPassword from "@/components/auth/ForgotPassword";
 import ChangePassword from "@/components/auth/ChangePassword";
+import TrackingDashboard from "@/pages/agent/TrackingDashboard";
 
 export const router = createBrowserRouter([
   {
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
           { path: "agents", element: <AdminAgents /> },
           { path: "cases", element: <AdminCases /> },
           { path: "customers", element: <AdminCustomers /> },
+          { path: "tracking", element: <TrackingDashboard /> },
           { path: "settings", element: <AdminSettings /> },
         ],
       },
@@ -86,6 +88,7 @@ export const router = createBrowserRouter([
           { path: "cases", element: <AgentCases /> },
           { path: "pending", element: <AgentPending /> },
           { path: "active", element: <AgentActive /> },
+          { path: "agentTracking", element: <TrackingDashboard /> },
           { path: "chat", element: <AgentChat /> },
           { path: "settings", element: <AgentSettings /> },
         ],
