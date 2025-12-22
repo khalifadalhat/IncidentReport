@@ -37,7 +37,7 @@ const sendCredentialsEmail = async (email, fullname, password, department) => {
   `;
   sendSmtpEmail.sender = {
     name: "Support Team",
-    email: "no-reply@incidencereport.com",
+    email: "khalifadalhat@gmail.com",
   };
   sendSmtpEmail.to = [{ email: email }];
 
