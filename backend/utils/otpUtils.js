@@ -30,7 +30,7 @@ const sendOTPEmail = async (email, otp, purpose) => {
       <p>If you didn't request this, please ignore this email.</p>
     </div>
   `;
-  sendSmtpEmail.sender = { name: "No Reply", email: "no-reply@yourapp.com" };
+  sendSmtpEmail.sender = { name: "No Reply", email: "khalifadalhat@gmail.com" };
   sendSmtpEmail.to = [{ email: email }];
 
   try {
