@@ -33,17 +33,15 @@ const ProtectedRoute = ({
   }
 
   if (layout) {
-    // When layout is true, menuItems, title, and subtitle are required
     if (!menuItems || !title || !subtitle) {
       return <Navigate to="/" replace />;
     }
-    // DashboardLayout uses <Outlet /> internally, so we don't pass children
+ 
     return (
       <DashboardLayout menuItems={menuItems} title={title} subtitle={subtitle} />
     );
   }
 
-  // When layout is false, render children or Outlet directly
   return children ? <>{children}</> : <Outlet />;
 };
 
