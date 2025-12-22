@@ -21,7 +21,7 @@ const sendLoginNotification = async (email, fullname) => {
   `;
   sendSmtpEmail.sender = {
     name: "Incidence Report Team",
-    email: "no-reply@incidencereport.com",
+    email: "khalifadalhat@gmail.com",
   };
   sendSmtpEmail.to = [{ email }];
 
