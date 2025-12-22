@@ -1,4 +1,10 @@
-const nodemailer = require("nodemailer");
+const brevo = require("@getbrevo/brevo");
+
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
 
 const generatePassword = () => {
   const length = 12;
@@ -12,39 +18,34 @@ const generatePassword = () => {
 };
 
 const sendCredentialsEmail = async (email, fullname, password, department) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-  });
+  const sendSmtpEmail = new brevo.SendSmtpEmail();
 
-  const mailOptions = {
-    from: `"Support Team" <${process.env.GMAIL_USER}>`,
-    to: email,
-    subject: "Your Agent Account Credentials",
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
-        <h2>Welcome, ${fullname}!</h2>
-        <p>Your agent account has been created successfully.</p>
-        <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Temporary Password:</strong> <code>${password}</code></p>
-          <p><strong>Department:</strong> ${department}</p>
-        </div>
-        <p><strong>Important:</strong> Please change your password immediately after logging in.</p>
-        <p><a href="${process.env.FRONTEND_URL}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a></p>
-        <p>Best regards,<br>Admin Team</p>
+  sendSmtpEmail.subject = "Your Agent Account Credentials";
+  sendSmtpEmail.htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd;">
+      <h2>Welcome, ${fullname}!</h2>
+      <p>Your agent account has been created successfully.</p>
+      <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Temporary Password:</strong> <code>${password}</code></p>
+        <p><strong>Department:</strong> ${department}</p>
       </div>
-    `,
+      <p><strong>Important:</strong> Please change your password immediately after logging in.</p>
+      <p><a href="${process.env.FRONTEND_URL}" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login Now</a></p>
+      <p>Best regards,<br>Admin Team</p>
+    </div>
+  `;
+  sendSmtpEmail.sender = {
+    name: "Support Team",
+    email: "no-reply@incidencereport.com",
   };
+  sendSmtpEmail.to = [{ email: email }];
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Credentials email sent to:", email);
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log("Credentials email sent to:", email, "ID:", data);
   } catch (err) {
-    console.error("Failed to send email:", err.message);
+    console.error("Failed to send credentials email:", err.message || err);
   }
 };
 
