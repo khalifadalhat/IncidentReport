@@ -1,11 +1,10 @@
 const brevo = require("@getbrevo/brevo");
-const { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } = brevo;
+const defaultClient = brevo.ApiClient.instance;
 
-const apiInstance = new TransactionalEmailsApi();
-apiInstance.setApiKey(
-  TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY
-);
+const apiKeyAuth = defaultClient.authentications['api-key'];
+apiKeyAuth.apiKey = process.env.BREVO_API_KEY; 
+
+const apiInstance = new brevo.TransactionalEmailsApi();
 
 const generatePassword = () => {
   const length = 12;
