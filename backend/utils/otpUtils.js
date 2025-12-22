@@ -1,11 +1,12 @@
 const brevo = require("@getbrevo/brevo");
 const OTP = require("../models/otp");
 
-const { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } = brevo;
+const defaultClient = brevo.ApiClient.instance;
 
-const apiInstance = new TransactionalEmailsApi();
+const apiKeyAuth = defaultClient.authentications["api-key"];
+apiKeyAuth.apiKey = process.env.BREVO_API_KEY;
 
-apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+const apiInstance = new brevo.TransactionalEmailsApi();
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -30,20 +31,29 @@ const sendOTPEmail = async (email, otp, purpose) => {
       <p>If you didn't request this, please ignore this email.</p>
     </div>
   `;
-  sendSmtpEmail.sender = { name: "Incidence Report", email: "khalifadalhat@gmail.com" };
+  sendSmtpEmail.sender = {
+    name: "Incidence Report",
+    email: "khalifadalhat@gmail.com",
+  };
   sendSmtpEmail.to = [{ email: email }];
 
   try {
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log("OTP email sent successfully to:", email, "MessageId:", data.messageId);
+    console.log(
+      "OTP email sent successfully to:",
+      email,
+      "MessageId:",
+      data.messageId
+    );
   } catch (err) {
     if (err.response) {
       console.error("Brevo API Error Status:", err.response.status);
-      console.error("Brevo API Error Body:", err.response.body || err.response.data);
-    } else if (err.request) {
-      console.error("Brevo Request Error (no response):", err.message);
+      console.error(
+        "Brevo API Error Body:",
+        err.response.body || err.response.data
+      );
     } else {
-      console.error("OTP Email setup error:", err.message);
+      console.error("OTP Email error:", err.message || err);
     }
   }
 };
