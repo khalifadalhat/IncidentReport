@@ -31,6 +31,6 @@ export const agentMenuItems: MenuItem[] = [
   // { name: 'Customers', href: '/agent/customers', icon: FiUsers },
   { name: 'Chat', href: '/agent/chat', icon: FiMessageSquare },
   // { name: 'Resolved', href: '/agent/resolved', icon: FiCheckCircle },
-  { name: 'Tracking', href: '/admin/agentTracking', icon: Pin },
+  { name: 'Tracking', href: '/agent/agentTracking', icon: Pin },
   { name: 'Settings', href: '/agent/settings', icon: FiSettings },
 ];
