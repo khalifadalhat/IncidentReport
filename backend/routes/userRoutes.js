@@ -137,4 +137,20 @@ router.get(
   userController.getAgents
 );
 
+router.get(
+  "/agents/live",
+  auth,
+  roleCheck("admin", "supervisor", "agent"), 
+  userController.getAgentsWithLocation
+);
+
+router.get(
+  "/customers/live",
+  auth,
+  roleCheck("admin", "supervisor", "agent"),
+  userController.getCustomersWithLocation
+);
+
+router.post("/users/live-location", authMiddleware, userController.updateLiveLocation);
+
 module.exports = router;
