@@ -44,9 +44,24 @@ const sendCredentialsEmail = async (email, fullname, password, department) => {
 
   try {
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log("Credentials email sent to:", email, "ID:", data);
+    console.log(
+      "OTP email sent successfully to:",
+      email,
+      "MessageId:",
+      data.messageId
+    );
   } catch (err) {
-    console.error("Failed to send credentials email:", err.message || err);
+    if (err.response) {
+      console.error("Brevo API Error Status:", err.response.status);
+      console.error(
+        "Brevo API Error Body:",
+        err.response.body || err.response.data
+      );
+    } else if (err.request) {
+      console.error("Brevo Request Error (no response):", err.message);
+    } else {
+      console.error("OTP Email setup error:", err.message);
+    }
   }
 };
 
