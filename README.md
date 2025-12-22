@@ -400,6 +400,14 @@ User-specific notifications and status updates
 
 ---
 
+### 🗺️ Live Location & Mapping
+- **Leaflet Maps Integration** - Interactive maps for real-time visualization
+- **Browser Geolocation API** - Users grant permission before location sharing
+- **Live Updates** - Location updates pushed in real time to agents and admins
+- **Role-Based Visibility** - Only authorized agents and admins can access tracking data
+---
+
+
 ## 🌐 Live Demo
 
 **🔗 [View Live Application](https://incidence-report.netlify.app/)**
@@ -500,7 +508,14 @@ The welcoming landing page that introduces visitors to the Incident Report platf
 - Monitor case resolution rates
 - Department-wise case distribution
 
+### 🗺️ Live User Tracking
+![Live Tracking Map](./screenshots/LiveTracking.png)
+- Real-time user location visualization using Leaflet
+- Accessible to agents and admins on the tracking page
+
+
 ---
+
 
 ## 🔧 Development
 
