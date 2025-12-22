@@ -17,7 +17,7 @@ const sendWelcomeEmail = async (email, fullname) => {
       <p>Best regards,<br>The Incidence Report Team</p>
     </div>
   `;
-  sendSmtpEmail.sender = { name: "Incidence Report Team", email: "no-reply@incidencereport.com" }; 
+  sendSmtpEmail.sender = { name: "Incidence Report Team", email: "khalifadalhat@gmail.com" }; 
   sendSmtpEmail.to = [{ email }];
 
   try {
