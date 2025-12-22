@@ -1,10 +1,10 @@
 const brevo = require("@getbrevo/brevo");
-const defaultClient = brevo.ApiClient.instance;
-
-const apiKeyAuth = defaultClient.authentications['api-key'];
-apiKeyAuth.apiKey = process.env.BREVO_API_KEY; 
 
 const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
 
 const generatePassword = () => {
   const length = 12;
@@ -44,7 +44,7 @@ const sendCredentialsEmail = async (email, fullname, password, department) => {
   try {
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
     console.log(
-      "OTP email sent successfully to:",
+      "Credentials email sent successfully to:",
       email,
       "MessageId:",
       data.messageId
@@ -59,7 +59,7 @@ const sendCredentialsEmail = async (email, fullname, password, department) => {
     } else if (err.request) {
       console.error("Brevo Request Error (no response):", err.message);
     } else {
-      console.error("OTP Email setup error:", err.message);
+      console.error("Credentials Email setup error:", err.message);
     }
   }
 };
