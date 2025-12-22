@@ -2,6 +2,8 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { createOTP, verifyOTP, isOTPVerified } = require("../utils/otpUtils");
+const { sendWelcomeEmail } = require("../utils/welcomeEmail");
+const { sendLoginNotification } = require("../utils/sendLoginNotification");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -44,6 +46,12 @@ exports.login = async (req, res) => {
       user.isFirstLogin = false;
     }
     await user.save({ validateBeforeSave: false });
+
+    if (user.isFirstLogin) {
+      sendLoginNotification(user.email, user.fullname).catch((err) =>
+        console.error("Login notification failed:", err)
+      );
+    }
 
     res.status(200).json({
       success: true,
@@ -89,7 +97,6 @@ exports.requestRegistrationOTP = async (req, res) => {
   }
 };
 
-// Step 2: Verify OTP for registration
 exports.verifyRegistrationOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -116,15 +123,23 @@ exports.verifyRegistrationOTP = async (req, res) => {
 
 exports.registerCustomer = async (req, res) => {
   try {
-    const { fullname, email, password, phone, location, gender, role } = req.body;
+    const { fullname, email, password, phone, location, gender, role } =
+      req.body;
 
     if (!email || !password || !fullname) {
-      return res.status(400).json({ error: "Fullname, email, and password required" });
+      return res
+        .status(400)
+        .json({ error: "Fullname, email, and password required" });
     }
 
-    const otpVerified = await isOTPVerified(email.toLowerCase(), "registration");
+    const otpVerified = await isOTPVerified(
+      email.toLowerCase(),
+      "registration"
+    );
     if (!otpVerified) {
-      return res.status(403).json({ error: "Please verify your email with OTP first" });
+      return res
+        .status(403)
+        .json({ error: "Please verify your email with OTP first" });
     }
 
     const existingUser = await User.findOne({ email: email.toLowerCase() });
@@ -143,6 +158,10 @@ exports.registerCustomer = async (req, res) => {
     });
 
     const token = generateToken(user);
+
+    sendWelcomeEmail(user.email, user.fullname).catch((err) =>
+      console.error("Welcome email failed:", err)
+    );
 
     res.status(201).json({
       success: true,
@@ -166,7 +185,9 @@ exports.registerAdmin = async (req, res) => {
     const { fullname, email, password, phone, location, gender } = req.body;
 
     if (!fullname || !email || !password) {
-      return res.status(400).json({ error: "Fullname, email, and password are required" });
+      return res
+        .status(400)
+        .json({ error: "Fullname, email, and password are required" });
     }
 
     const exists = await User.findOne({ email });
@@ -229,7 +250,6 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-
 exports.verifyResetOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -259,10 +279,15 @@ exports.resetPassword = async (req, res) => {
     const { email, newPassword } = req.body;
 
     if (!email || !newPassword) {
-      return res.status(400).json({ error: "Email and new password are required" });
+      return res
+        .status(400)
+        .json({ error: "Email and new password are required" });
     }
 
-    const otpVerified = await isOTPVerified(email.toLowerCase(), "password-reset");
+    const otpVerified = await isOTPVerified(
+      email.toLowerCase(),
+      "password-reset"
+    );
     if (!otpVerified) {
       return res.status(403).json({ error: "Please verify OTP first" });
     }
@@ -307,8 +332,8 @@ exports.changePassword = async (req, res) => {
     const { email } = req.user;
 
     if (!currentPassword || !newPassword || !otp) {
-      return res.status(400).json({ 
-        error: "Current password, new password, and OTP are required" 
+      return res.status(400).json({
+        error: "Current password, new password, and OTP are required",
       });
     }
 
