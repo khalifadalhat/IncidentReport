@@ -1,17 +1,12 @@
 const brevo = require("@getbrevo/brevo");
 const OTP = require("../models/otp");
 
-let defaultClient = brevo.ApiClient.instance;
-let apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
-
 const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(0, process.env.BREVO_API_KEY);
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-console.log("BREVO_API_KEY exists:", !!process.env.BREVO_API_KEY);
-console.log("BREVO_API_KEY length:", process.env.BREVO_API_KEY?.length);
 
 const sendOTPEmail = async (email, otp, purpose) => {
   const purposes = {
