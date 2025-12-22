@@ -1,32 +1,18 @@
 const brevo = require("@getbrevo/brevo");
 const OTP = require("../models/otp");
 
-console.log("=== BREVO DEBUG ===");
-console.log("API Key exists:", !!process.env.BREVO_API_KEY);
-console.log(
-  "API Key starts with xkeysib:",
-  process.env.BREVO_API_KEY?.startsWith("xkeysib-")
-);
-console.log("API Key length:", process.env.BREVO_API_KEY?.length);
-console.log("Brevo object keys:", Object.keys(brevo));
-console.log("ApiClient exists:", !!brevo.ApiClient);
-console.log("===================");
-
 const apiInstance = new brevo.TransactionalEmailsApi();
 
-const setBrevoApiKey = () => {
-  const defaultClient = brevo.ApiClient.instance;
-  const apiKey = defaultClient.authentications["api-key"];
-  apiKey.apiKey = process.env.BREVO_API_KEY;
-};
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey, 
+  process.env.BREVO_API_KEY
+);
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const sendOTPEmail = async (email, otp, purpose) => {
-  setBrevoApiKey();
-
   const purposes = {
     registration: "Account Registration",
     "password-reset": "Password Reset",
@@ -42,33 +28,16 @@ const sendOTPEmail = async (email, otp, purpose) => {
       <p>Your OTP code is:</p>
       <h1 style="color: #007bff; letter-spacing: 5px;">${otp}</h1>
       <p>This code will expire in 10 minutes.</p>
-      <p>If you didn't request this, please ignore this email.</p>
     </div>
   `;
-  sendSmtpEmail.sender = {
-    name: "Incidence Report",
-    email: "khalifadalhat@gmail.com",
-  };
+  sendSmtpEmail.sender = { name: "Incidence Report", email: "khalifadalhat@gmail.com" };
   sendSmtpEmail.to = [{ email: email }];
 
   try {
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log(
-      "OTP email sent successfully to:",
-      email,
-      "MessageId:",
-      data.messageId
-    );
+    console.log("OTP email sent to:", email);
   } catch (err) {
-    if (err.response) {
-      console.error("Brevo API Error Status:", err.response.status);
-      console.error(
-        "Brevo API Error Body:",
-        err.response.body || err.response.data
-      );
-    } else {
-      console.error("OTP Email error:", err.message || err);
-    }
+    console.error("Brevo API Error:", err.response?.body || err.message);
     throw err;
   }
 };
