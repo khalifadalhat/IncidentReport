@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
-import { FiBell, FiCheck, FiTrash2, FiX } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-import { useSocket } from '@/context/SocketContext';
-import axios from 'axios';
-import { format } from 'date-fns';
+import { useEffect, useState } from "react";
+import { FiBell, FiCheck, FiTrash2, FiX } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { useSocket } from "@/context/SocketContext";
+import axios from "axios";
+import { format } from "date-fns";
+import { useAuthStore } from "@/store/useAuthStore";
+import { canSeeNotifications } from "@/utils/roleUtils";
 
 interface Notification {
   _id: string;
@@ -21,46 +23,48 @@ const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
   const { socket } = useSocket();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
-  const fetchNotifications = async () => {
-    try {
-      const response = await axios.get('/api/notifications', {
-        params: { limit: 10 },
-      });
-
-      const fetchedNotifications = response.data.notifications || [];
-      const fetchedUnreadCount = response.data.unreadCount || 0;
-      
-      setNotifications(fetchedNotifications);
-      setUnreadCount(fetchedUnreadCount);
-      
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  };
+  const canShow = canSeeNotifications(user?.role);
 
   useEffect(() => {
+    if (!canShow) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get("/api/notifications", {
+          params: { limit: 10 },
+        });
+
+        setNotifications(response.data.notifications || []);
+        setUnreadCount(response.data.unreadCount || 0);
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
     fetchNotifications();
-  }, []);
+  }, [canShow]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !canShow) return;
 
     const handleNotification = (notification: Notification) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1);
     };
 
-    socket.on('notification', handleNotification);
+    socket.on("notification", handleNotification);
 
     return () => {
-      socket.off('notification', handleNotification);
+      socket.off("notification", handleNotification);
     };
-  }, [socket]);
+  }, [socket, canShow]);
+
+  if (!canShow) return null;
 
   const markAsRead = async (id: string) => {
     try {
@@ -70,17 +74,17 @@ const NotificationDropdown = () => {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error('Failed to mark as read:', error);
+      console.error("Failed to mark as read:", error);
     }
   };
 
   const markAllAsRead = async () => {
     try {
-      await axios.patch('/api/notifications/mark-all-read');
+      await axios.patch("/api/notifications/mark-all-read");
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {
-      console.error('Failed to mark all as read:', error);
+      console.error("Failed to mark all as read:", error);
     }
   };
 
@@ -93,7 +97,7 @@ const NotificationDropdown = () => {
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
     } catch (error) {
-      console.error('Failed to delete notification:', error);
+      console.error("Failed to delete notification:", error);
     }
   };
 
@@ -115,7 +119,7 @@ const NotificationDropdown = () => {
         <FiBell className="text-2xl" />
         {unreadCount > 0 && (
           <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -164,7 +168,7 @@ const NotificationDropdown = () => {
                   <div
                     key={notification._id}
                     className={`p-4 border-b hover:bg-gray-50 cursor-pointer transition ${
-                      !notification.read ? 'bg-blue-50' : ''
+                      !notification.read ? "bg-blue-50" : ""
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -182,7 +186,10 @@ const NotificationDropdown = () => {
                           {notification.message}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {format(new Date(notification.createdAt), 'MMM d, h:mm a')}
+                          {format(
+                            new Date(notification.createdAt),
+                            "MMM d, h:mm a"
+                          )}
                         </p>
                       </div>
                       <div className="flex gap-2">
