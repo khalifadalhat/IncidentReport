@@ -1,12 +1,10 @@
 const brevo = require("@getbrevo/brevo");
-const OTP = require("../models/otp");
-
-const defaultClient = brevo.ApiClient.instance;
-
-const apiKeyAuth = defaultClient.authentications["api-key"];
-apiKeyAuth.apiKey = process.env.BREVO_API_KEY;
 
 const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
