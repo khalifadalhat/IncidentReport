@@ -1,14 +1,32 @@
 const brevo = require("@getbrevo/brevo");
 const OTP = require("../models/otp");
 
+console.log("=== BREVO DEBUG ===");
+console.log("API Key exists:", !!process.env.BREVO_API_KEY);
+console.log(
+  "API Key starts with xkeysib:",
+  process.env.BREVO_API_KEY?.startsWith("xkeysib-")
+);
+console.log("API Key length:", process.env.BREVO_API_KEY?.length);
+console.log("Brevo object keys:", Object.keys(brevo));
+console.log("ApiClient exists:", !!brevo.ApiClient);
+console.log("===================");
+
 const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(0, process.env.BREVO_API_KEY);
+
+const setBrevoApiKey = () => {
+  const defaultClient = brevo.ApiClient.instance;
+  const apiKey = defaultClient.authentications["api-key"];
+  apiKey.apiKey = process.env.BREVO_API_KEY;
+};
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 const sendOTPEmail = async (email, otp, purpose) => {
+  setBrevoApiKey();
+
   const purposes = {
     registration: "Account Registration",
     "password-reset": "Password Reset",
@@ -51,6 +69,7 @@ const sendOTPEmail = async (email, otp, purpose) => {
     } else {
       console.error("OTP Email error:", err.message || err);
     }
+    throw err;
   }
 };
 
