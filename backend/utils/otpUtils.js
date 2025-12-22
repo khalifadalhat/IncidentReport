@@ -38,9 +38,12 @@ const sendOTPEmail = async (email, otp, purpose) => {
     console.log("OTP email sent successfully to:", email, "MessageId:", data.messageId);
   } catch (err) {
     if (err.response) {
-      console.error("Brevo API Error:", await err.response.text());
+      console.error("Brevo API Error Status:", err.response.status);
+      console.error("Brevo API Error Body:", err.response.body || err.response.data);
+    } else if (err.request) {
+      console.error("Brevo Request Error (no response):", err.message);
     } else {
-      console.error("OTP Email error:", err.message || err);
+      console.error("OTP Email setup error:", err.message);
     }
   }
 };
