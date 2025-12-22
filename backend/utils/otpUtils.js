@@ -41,7 +41,6 @@ const sendOTPEmail = async (email, otp, purpose) => {
   }
 };
 
-// Rest of your OTP functions remain the same
 const createOTP = async (email, purpose) => {
   await OTP.deleteMany({ email, purpose });
 
