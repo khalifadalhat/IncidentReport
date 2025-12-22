@@ -1,17 +1,15 @@
-const nodemailer = require("nodemailer");
+const brevo = require("@getbrevo/brevo");
 const OTP = require("../models/otp");
+
+const apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
 
 const sendOTPEmail = async (email, otp, purpose) => {
   const purposes = {
@@ -20,28 +18,30 @@ const sendOTPEmail = async (email, otp, purpose) => {
     "password-change": "Password Change",
   };
 
-  const mailOptions = {
-    from: process.env.GMAIL_USER,
-    to: email,
-    subject: `${purposes[purpose]} - OTP Verification`,
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>${purposes[purpose]}</h2>
-        <p>Your OTP code is:</p>
-        <h1 style="color: #007bff; letter-spacing: 5px;">${otp}</h1>
-        <p>This code will expire in 10 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      </div>
-    `,
-  };
+  const sendSmtpEmail = new brevo.SendSmtpEmail();
+
+  sendSmtpEmail.subject = `${purposes[purpose]} - OTP Verification`;
+  sendSmtpEmail.htmlContent = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2>${purposes[purpose]}</h2>
+      <p>Your OTP code is:</p>
+      <h1 style="color: #007bff; letter-spacing: 5px;">${otp}</h1>
+      <p>This code will expire in 10 minutes.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+    </div>
+  `;
+  sendSmtpEmail.sender = { name: "No Reply", email: "no-reply@yourapp.com" };
+  sendSmtpEmail.to = [{ email: email }];
 
   try {
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    console.error("Email error:", error);
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
+    console.log("OTP email sent to:", email, "ID:", data);
+  } catch (err) {
+    console.error("OTP Email error:", err.message || err);
   }
 };
 
+// Rest of your OTP functions remain the same
 const createOTP = async (email, purpose) => {
   await OTP.deleteMany({ email, purpose });
 
