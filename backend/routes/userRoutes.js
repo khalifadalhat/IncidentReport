@@ -151,6 +151,6 @@ router.get(
   userController.getCustomersWithLocation
 );
 
-router.post("/users/live-location", authMiddleware, userController.updateLiveLocation);
+router.post("/users/live-location", auth, userController.updateLiveLocation);
 
 module.exports = router;
