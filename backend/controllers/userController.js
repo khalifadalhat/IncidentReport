@@ -115,3 +115,60 @@ exports.getAgents = async (req, res) => {
 };
 
 module.exports = exports;
+
+
+exports.updateLiveLocation = async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: "latitude and longitude required" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        liveLocation: {
+          type: "Point",
+          coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          lastUpdated: new Date(),
+        },
+      },
+      { new: true }
+    ).select("liveLocation");
+
+    res.json({
+      success: true,
+      liveLocation: updatedUser.liveLocation,
+    });
+  } catch (err) {
+    console.error("Live location update error:", err);
+    res.status(500).json({ error: "Failed to update live location" });
+  }
+};
+
+exports.getCustomersWithLocation = async (req, res) => {
+  try {
+    const customers = await User.find({ role: "customer" })
+      .select("fullname liveLocation")
+      .lean(); 
+
+    res.json({ success: true, customers });
+  } catch (err) {
+    console.error("Get customers location error:", err);
+    res.status(500).json({ error: "Failed to fetch customers" });
+  }
+};
+
+exports.getAgentsWithLocation = async (req, res) => {
+  try {
+    const agents = await User.find({ role: "agent" })
+      .select("fullname liveLocation")
+      .lean();
+
+    res.json({ success: true, agents });
+  } catch (err) {
+    console.error("Get agents location error:", err);
+    res.status(500).json({ error: "Failed to fetch agents" });
+  }
+};
