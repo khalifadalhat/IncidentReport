@@ -1,5 +1,4 @@
 const brevo = require("@getbrevo/brevo");
-const OTP = require("../models/otp");
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 
@@ -30,15 +29,15 @@ const sendOTPEmail = async (email, otp, purpose) => {
       <p>This code will expire in 10 minutes.</p>
     </div>
   `;
-  sendSmtpEmail.sender = { name: "Incidence Report", email: "khalifadalhat@gmail.com" };
+  sendSmtpEmail.sender = { name: "Support", email: "khalifadalhat@gmail.com" };
   sendSmtpEmail.to = [{ email: email }];
 
   try {
+    // 3. Just call the method on the instance we already configured
     const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-    console.log("OTP email sent to:", email);
+    console.log("Success! Message ID:", data.body.messageId);
   } catch (err) {
-    console.error("Brevo API Error:", err.response?.body || err.message);
-    throw err;
+    console.error("Error:", err.response?.body || err.message);
   }
 };
 
