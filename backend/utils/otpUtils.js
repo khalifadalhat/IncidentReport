@@ -1,4 +1,5 @@
 const brevo = require("@getbrevo/brevo");
+const OTP = require("../models/otp"); 
 
 const apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(
