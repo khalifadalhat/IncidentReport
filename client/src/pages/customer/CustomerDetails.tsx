@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import api from "@/utils/api";
 import { useLiveAddress } from "@/hook/useLiveAddress";
+import { useLiveLocationTracker } from "@/hook/useLiveLocationTracker";
 
 interface FormData {
   fullname: string;
@@ -38,6 +39,7 @@ interface User {
 }
 
 const CustomerDetails = () => {
+  useLiveLocationTracker();
   const { address, error } = useLiveAddress();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
