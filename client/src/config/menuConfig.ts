@@ -4,6 +4,7 @@ import {
   UserCheck,
   Briefcase,
   Settings,
+  Pin,
 } from 'lucide-react';
 import {
   FiHome,
@@ -19,7 +20,7 @@ export const adminMenuItems: MenuItem[] = [
   { name: 'Agents', href: '/admin/agents', icon: UserCheck },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Cases', href: '/admin/cases', icon: Briefcase },
-  // { name: 'Messages', href: '/admin/messages', icon: MessageSquare },
+  { name: 'Tracking', href: '/admin/tracking', icon: Pin },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
@@ -30,5 +31,6 @@ export const agentMenuItems: MenuItem[] = [
   // { name: 'Customers', href: '/agent/customers', icon: FiUsers },
   { name: 'Chat', href: '/agent/chat', icon: FiMessageSquare },
   // { name: 'Resolved', href: '/agent/resolved', icon: FiCheckCircle },
+  { name: 'Tracking', href: '/admin/agentTracking', icon: Pin },
   { name: 'Settings', href: '/agent/settings', icon: FiSettings },
 ];
